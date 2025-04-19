@@ -1211,24 +1211,6 @@
           5: { state: shuttle_construct-5, visible: true}
   - type: Reflect
     reflectProb: 1
-  - type: Fixtures
-    fixtures:
-      fix1:
-        shape:
-          !type:PhysShapeAabb
-          bounds: "-0.5,-0.5,0.5,0.5"
-        mask:
-        - FullTileMask
-        layer:
-        - WallLayer
-        density: 2000
-  - type: RustRequiresPathStage # Goobstation
-    pathStage: 7 # Toxic blade
-  - type: Penetratable # Goobstation - Better snipers
-    penetrateDamage: 90
-    damagePenalty: 0.3
-  - type: CosmicCorruptible # DeltaV - Cosmic Cult
-    convertTo: WallCosmicCult
 
 - type: entity
   parent: BaseWall

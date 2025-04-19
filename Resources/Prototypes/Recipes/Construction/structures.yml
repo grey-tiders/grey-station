@@ -291,6 +291,7 @@
     - !type:TileNotBlocked
 
 - type: construction
+  name: diagonal shuttle wall
   id: DiagonalShuttleWall
   name: construction-recipe-diagonal-shuttle-wall
   graph: Girder
