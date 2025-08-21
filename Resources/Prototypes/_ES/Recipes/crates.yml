@@ -1,0 +1,15 @@
+- type: construction
+  id: ESCrateTrashBin
+  graph: ESTrashBin
+  startNode: start
+  targetNode: trashbin
+  category: construction-category-storage
+  objectType: Structure
+
+- type: construction
+  id: ESCrateTrashBinSecure
+  graph: ESTrashBinSecure
+  startNode: start
+  targetNode: trashbinsecure
+  category: construction-category-storage
+  objectType: Structure
