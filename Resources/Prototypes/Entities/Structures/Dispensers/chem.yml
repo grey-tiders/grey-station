@@ -53,8 +53,10 @@
   components:
   - type: Sprite
     sprite: Structures/dispensers.rsi
-    state: industrial-working
-    snapCardinals: true
+# ES Start
+    state: industrial
+    noRot: True
+# ES End
   - type: Storage
     openOnActivate: false
     whitelist:
