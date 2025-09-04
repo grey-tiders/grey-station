@@ -112,6 +112,9 @@
     sprite: Structures/smalldispensers.rsi
     drawdepth: SmallObjects
     state: soda
+# ES Start
+    noRot: true
+# ES End
   - type: Storage
     openOnActivate: false
     whitelist:
