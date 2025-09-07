@@ -22,7 +22,7 @@
 - type: species
   id: Reptilian
   name: species-name-reptilian
-  roundStart: true
+  roundStart: false # Greystation change
   prototype: MobReptilian
   sprites: MobReptilianSprites
   defaultSkinTone: "#34a223"

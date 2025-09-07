@@ -94,12 +94,6 @@ SPDX-License-Identifier: AGPL-3.0-or-later
                                     <Control HorizontalExpand="True"/>
                                     <OptionButton Name="SexButton" HorizontalAlignment="Right" />
                                 </BoxContainer>
-                                <!-- Pronouns -->
-                                <BoxContainer HorizontalExpand="True">
-                                    <Label Text="{Loc 'humanoid-profile-editor-pronouns-label'}" />
-                                    <Control HorizontalExpand="True"/>
-                                    <OptionButton Name="PronounsButton" HorizontalAlignment="Right" />
-                                </BoxContainer>
                                 <!-- Show clothing -->
                                 <BoxContainer HorizontalExpand="True">
                                     <Label Text="{Loc 'humanoid-profile-editor-clothing'}" />
