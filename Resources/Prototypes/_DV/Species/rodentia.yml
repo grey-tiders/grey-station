@@ -27,7 +27,6 @@
   femaleFirstNames: NamesRodentiaFemale
   lastNames: NamesRodentiaLast
   naming: LastFirst
-<<<<<<< HEAD
   # begin Goobstation: port EE height/width sliders
   sizeRatio: 1.1 # i don't know WHY, but disproportionate rodentia always look weird.
   minHeight: 0.8
@@ -37,8 +36,6 @@
   defaultWidth: 0.80
   maxWidth: 1.10
   # end Goobstation: port EE height/width sliders
-=======
->>>>>>> parent of d44780a515 (Port Height and Width sliders from EE (#3761))
 
 - type: speciesBaseSprites
   id: MobRodentiaSprites

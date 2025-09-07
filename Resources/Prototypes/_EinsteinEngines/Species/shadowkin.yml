@@ -24,7 +24,6 @@
   sexes:
     - Male
     - Female
-<<<<<<< HEAD
   # begin Goobstation: port EE height/width sliders
   minHeight: 0.80
   defaultHeight: 0.85
@@ -33,8 +32,6 @@
   defaultWidth: 0.85
   maxWidth: 1.15
   # end Goobstation: port EE height/width sliders
-=======
->>>>>>> parent of d44780a515 (Port Height and Width sliders from EE (#3761))
 
 - type: speciesBaseSprites
   id: MobShadowkinSprites

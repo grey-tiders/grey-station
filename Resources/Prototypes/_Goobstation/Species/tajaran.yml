@@ -22,7 +22,6 @@
   maleFirstNames: NamesTajaranFirst
   femaleFirstNames: NamesTajaranFirst
   lastNames: NamesTajaranLast
-<<<<<<< HEAD
   # begin Goobstation: port EE height/width sliders
   minHeight: 0.85
   defaultHeight: 0.90
@@ -31,8 +30,6 @@
   defaultWidth: 0.90
   maxWidth: 1.10
   # end Goobstation: port EE height/width sliders
-=======
->>>>>>> parent of d44780a515 (Port Height and Width sliders from EE (#3761))
 
 - type: markingPoints
   id: MobTajaranMarkingLimits
