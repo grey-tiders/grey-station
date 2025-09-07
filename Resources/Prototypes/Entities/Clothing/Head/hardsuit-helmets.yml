@@ -1046,7 +1046,7 @@
 
 #Deathsquad Hardsuit
 - type: entity
-  parent: [ BaseCentcommContraband, ClothingHeadHardsuitWithLightBase ]
+  parent: [ BaseCentcommContraband, ClothingHeadHardsuitBase ] # Greystation - Edit
   id: ClothingHeadHelmetHardsuitDeathsquad
   name: deathsquad voidsuit helmet # Goob edit
   description: A robust helmet for special operations.
@@ -1081,11 +1081,11 @@
   - type: FlashImmunity # Goobstation
   - type: FlashSoundSuppression # Goobstation
     protectionRange: 0
-  - type: PointLight # Goobstation - Light to deathsquad hardsuit
-    color: "#567fc4"
-    rotation: 30
-    energy: 10
-    radius: 5
+#  - type: PointLight # Greystation - Remove goob light
+#    color: "#567fc4"
+#    rotation: 30
+#    energy: 10
+#    radius: 5
   # WD EDIT START
   - type: ThermalVision
     isEquipment: true
