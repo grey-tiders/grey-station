@@ -731,7 +731,7 @@
   components:
   - type: Sprite
     layers:
-    - state: purple
+    - state: yellow
   - type: GasCanister
     gasMixture:
       volume: 1000
@@ -780,7 +780,7 @@
   components:
   - type: Sprite
     layers:
-    - state: healium
+    - state: yellow
   - type: GasCanister
     gasMixture:
       volume: 1000
@@ -830,7 +830,7 @@
   components:
   - type: Sprite
     layers:
-    - state: brown
+    - state: yellow
   - type: GasCanister
     gasMixture:
       volume: 1000
@@ -1080,7 +1080,7 @@
   categories: [ HideSpawnMenu ]
   components:
   - type: Sprite
-    state: purple-1
+    state: yellow-1
 
 - type: entity
   parent: GasCanisterBrokenBase
@@ -1088,7 +1088,7 @@
   categories: [ HideSpawnMenu ]
   components:
   - type: Sprite
-    state: healium-1
+    state: yellow-1
 
 - type: entity
   parent: GasCanisterBrokenBase
@@ -1096,13 +1096,4 @@
   categories: [ HideSpawnMenu ]
   components:
   - type: Sprite
-    state: brown-1
-
-- type: entity
-  parent: GasCanisterBrokenBase
-  id: PluoxiumCanisterBroken
-  categories: [ HideSpawnMenu ]
-  components:
-  - type: Sprite
-    state: darkblue-1
-# Assmos - /tg/ gases end
+    state: yellow-1
