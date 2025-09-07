@@ -141,7 +141,6 @@
 // SPDX-FileCopyrightText: 2025 GoobBot <uristmchands@proton.me>
 // SPDX-FileCopyrightText: 2025 Ignaz "Ian" Kraft <ignaz.k@live.de>
 // SPDX-FileCopyrightText: 2025 J <billsmith116@gmail.com>
-// SPDX-FileCopyrightText: 2025 MarkerWicker <markerWicker@proton.me>
 // SPDX-FileCopyrightText: 2025 Pieter-Jan Briers <pieterjan.briers+git@gmail.com>
 // SPDX-FileCopyrightText: 2025 Piras314 <p1r4s@proton.me>
 // SPDX-FileCopyrightText: 2025 SX-7 <92227810+SX-7@users.noreply.github.com>
@@ -186,7 +185,6 @@ using Robust.Client.Utility;
 using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
 using Robust.Shared.Enums;
-using Robust.Shared.Physics;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Physics.Systems;
 using Robust.Shared.Utility;
@@ -387,34 +385,7 @@ namespace Content.Client.Lobby.UI
                 SetSpecies(_species[args.Id].ID);
                 UpdateHairPickers();
                 OnSkinColorOnValueChanged();
-                UpdateHeightWidthSliders(); // Goobstation: port EE height/width sliders
             };
-
-            // begin Goobstation: port EE height/width sliders
-            #region Height and Width            
-
-            UpdateHeightWidthSliders();
-            UpdateDimensions(SliderUpdate.Both);
-
-            HeightSlider.OnValueChanged += _ => UpdateDimensions(SliderUpdate.Height);
-            WidthSlider.OnValueChanged += _ => UpdateDimensions(SliderUpdate.Width);
-
-            HeightReset.OnPressed += _ =>
-            {
-                var prototype = _species.Find(x => x.ID == Profile?.Species) ?? _species.First();
-                HeightSlider.Value = prototype.DefaultHeight;
-                UpdateDimensions(SliderUpdate.Height);
-            };
-
-            WidthReset.OnPressed += _ =>
-            {
-                var prototype = _species.Find(x => x.ID == Profile?.Species) ?? _species.First();
-                WidthSlider.Value = prototype.DefaultWidth;
-                UpdateDimensions(SliderUpdate.Width);
-            };
-
-            #endregion Height and Width
-            // end Goobstation: port EE height/width sliders
 
             #region Skin
 
@@ -954,8 +925,6 @@ namespace Content.Client.Lobby.UI
             UpdateHairPickers();
             UpdateCMarkingsHair();
             UpdateCMarkingsFacialHair();
-            UpdateHeightWidthSliders(); // Goobstation: port EE height/width sliders
-            UpdateWeight(); // Goobstation: port EE height/width sliders
 
             RefreshAntags();
             RefreshJobs();
@@ -1437,11 +1406,6 @@ namespace Content.Client.Lobby.UI
             UpdateSexControls(); // update sex for new species
             UpdateSpeciesGuidebookIcon();
             ReloadPreview();
-            // begin Goobstation: port EE height/width sliders
-            // Changing species provides inaccurate sliders without these
-            UpdateHeightWidthSliders();
-            UpdateWeight();
-            // end Goobstation: port EE height/width sliders
         }
 
         private void SetName(string newName)
@@ -1460,22 +1424,6 @@ namespace Content.Client.Lobby.UI
             Profile = Profile?.WithSpawnPriorityPreference(newSpawnPriority);
             SetDirty();
         }
-
-        // begin Goobstation: port EE height/width sliders
-        private void SetProfileHeight(float height)
-        {
-            Profile = Profile?.WithHeight(height);
-            ReloadProfilePreview();
-            IsDirty = true;
-        }
-
-        private void SetProfileWidth(float width)
-        {
-            Profile = Profile?.WithWidth(width);
-            ReloadProfilePreview();
-            IsDirty = true;
-        }
-        // end Goobstation: port EE height/width sliders
 
         public bool IsDirty
         {
@@ -1691,6 +1639,7 @@ namespace Content.Client.Lobby.UI
             SpawnPriorityButton.SelectId((int) Profile.SpawnPriority);
         }
 
+<<<<<<< HEAD
         // begin Goobstation: port EE height/width sliders
         private void UpdateHeightWidthSliders()
         {
@@ -1792,6 +1741,8 @@ namespace Content.Client.Lobby.UI
         }
         // end Goobstation: port EE height/width sliders
 
+=======
+>>>>>>> parent of d44780a515 (Port Height and Width sliders from EE (#3761))
         private void UpdateHairPickers()
         {
             if (Profile == null)

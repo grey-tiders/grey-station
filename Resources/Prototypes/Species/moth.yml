@@ -31,6 +31,7 @@
   maleFirstNames: NamesMothFirstMale
   femaleFirstNames: NamesMothFirstFemale
   lastNames: NamesMothLast
+<<<<<<< HEAD
   # begin Goobstation: port EE height/width sliders
   minHeight: 0.8
   defaultHeight: 1
@@ -39,6 +40,8 @@
   defaultWidth: 1
   maxWidth: 1.25
   # end Goobstation: port EE height/width sliders
+=======
+>>>>>>> parent of d44780a515 (Port Height and Width sliders from EE (#3761))
 
 - type: speciesBaseSprites
   id: MobMothSprites
