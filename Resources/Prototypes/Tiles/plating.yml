@@ -29,18 +29,17 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+# ES START
+# modified to remove different friction values, since we change friction to be higher overall.
+
 - type: tile
   id: Plating
   name: tiles-plating
   sprite: /Textures/Tiles/plating.png
   baseTurf: Lattice
   isSubfloor: true
-  # Goobstation - Fireaxe plating prying
-  deconstructTools: [ Axing ]
-  deconstructTimeMultiplier: 5 # Goobstation
   footstepSounds:
     collection: FootstepPlating
-  friction: 1.5
   heatCapacity: 10000
 
 - type: tile
@@ -54,26 +53,8 @@
   - 1.0
   baseTurf: Lattice
   isSubfloor: true
-  # Goobstation - Fireaxe plating prying
-  deconstructTools: [ Axing ]
-  deconstructTimeMultiplier: 5 # Goobstation
   footstepSounds:
     collection: FootstepPlating
-  friction: 0.3
-  heatCapacity: 10000
-
-- type: tile
-  id: PlatingBurnt
-  name: tiles-plating
-  sprite: /Textures/Tiles/plating_burnt.png
-  baseTurf: Lattice
-  isSubfloor: true
-  # Goobstation - Fireaxe plating prying
-  deconstructTools: [ Axing ]
-  deconstructTimeMultiplier: 5 # Goobstation
-  footstepSounds:
-    collection: FootstepPlating
-  friction: 1.5
   heatCapacity: 10000
 
 - type: tile
@@ -82,12 +63,8 @@
   sprite: /Textures/Tiles/Asteroid/asteroid_plating.png
   baseTurf: Lattice
   isSubfloor: true
-  # Goobstation - Fireaxe plating prying
-  deconstructTools: [ Axing ]
-  deconstructTimeMultiplier: 5 # Goobstation
   footstepSounds:
     collection: FootstepPlating
-  friction: 1.5
   heatCapacity: 10000
 
 - type: tile
@@ -96,12 +73,8 @@
   sprite: /Textures/Tiles/Misc/clockwork/clockwork_floor.png
   baseTurf: Lattice
   isSubfloor: true
-  # Goobstation - Fireaxe plating prying
-  deconstructTools: [ Axing ]
-  deconstructTimeMultiplier: 5 # Goobstation
   footstepSounds:
     collection: FootstepPlating
-  friction: 1.5
   heatCapacity: 10000
 
 - type: tile
@@ -110,12 +83,8 @@
   sprite: /Textures/Tiles/snow_plating.png #Not in the snow planet RSI because it doesn't have any metadata. Should probably be moved to its own folder later.
   baseTurf: Lattice
   isSubfloor: true
-  # Goobstation - Fireaxe plating prying
-  deconstructTools: [ Axing ]
-  deconstructTimeMultiplier: 5 # Goobstation
   footstepSounds:
     collection: FootstepPlating
-  friction: 0.75 #a little less then actual snow
   heatCapacity: 10000
 
 - type: tile
@@ -125,11 +94,9 @@
   baseTurf: Space
   isSubfloor: true
   deconstructTools: [ Cutting ]
-  deconstructTimeMultiplier: 1 # Goobstation
   weather: true
   footstepSounds:
     collection: FootstepCatwalk
-  friction: 1.5
   isSpace: true
   itemDrop: PartRodMetal1
   heatCapacity: 10000
@@ -142,11 +109,9 @@
   baseTurf: Space
   isSubfloor: true
   deconstructTools: [ Cutting ]
-  deconstructTimeMultiplier: 1 # Goobstation
   weather: true
   footstepSounds:
     collection: FootstepPlating
-  friction: 1.5
   isSpace: true
   itemDrop: PartRodMetal1
   heatCapacity: 10000
