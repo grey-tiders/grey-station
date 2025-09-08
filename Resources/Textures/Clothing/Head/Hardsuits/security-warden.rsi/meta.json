@@ -1,7 +1,7 @@
 {
   "version": 1,
   "license": "CC-BY-SA-3.0",
-  "copyright": "sprite made by Gtheglorious based on the sprite made by Alekshhh for SS14. Vox states by Flareguy for Space Station 14",
+  "copyright": "Sprites made by ps3moira on discord based on the sprite taken from tgstation at commit https://github.com/tgstation/tgstation/commit/4f6190e2895e09116663ef282d3ce1d8b35c032e. Vox states by ps3moira for Space Station 14",
   "size": {
     "x": 32,
     "y": 32
@@ -19,6 +19,14 @@
     },
     {
       "name": "on-equipped-HELMET",
+      "directions": 4
+    },
+    {
+      "name": "equipped-head-unshaded",
+      "directions": 4
+    },
+    {
+      "name": "equipped-head-unshaded-vox",
       "directions": 4
     },
     {
