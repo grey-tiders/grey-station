@@ -174,7 +174,7 @@
     mode: SnapgridCenter
   components:
   - type: Sprite # TODO: add sprite for maintenance panel open
-    sprite: GreyStation/Structures/Power/substation.rsi # GreyStation  - Change to fit current substation sprite
+    sprite: Structures/Power/substation.rsi
     snapCardinals: true
     layers:
     - state: substation
@@ -188,8 +188,9 @@
   - type: PointLight
     radius: 1.5
     energy: 1
-    color: "#3db83b" # GreyStation  - Change to fit current substation sprite
+    color: "#ff6900"
     castShadows: false
+    offset: 0, -0.2
   - type: PowerMonitoringDevice
     sprite: Structures/Power/substation.rsi
     state: substation_static
@@ -257,7 +258,7 @@
   - type: PointLight
     radius: 1.5
     energy: 1
-    color: "#3db83b" # GreyStation  - Change to fit current substation sprite
+    color: "#ff6900"
     netsync: false
     castShadows: false
     #offset: 0, -0.2 # GreyStation  - Change to fit current substation sprite
@@ -277,10 +278,10 @@
     anchored: true
   - type: Sprite # TODO: add sprite for maintenance panel open
     drawdepth: WallMountedItems
-    sprite: GreyStation/Structures/Power/substation.rsi # GreyStation  - Change to fit current substation sprite
+    sprite: Structures/Power/substation.rsi
     layers:
     - state: substation_wall
-    - state: screen # GreyStation  - Change to fit current substation sprite
+    - state: screen_wall
       shader: unshaded
   - type: Battery
     maxCharge: 2000000
