@@ -110,22 +110,13 @@
             "name": "lethal"
         },
         {
-            "name": "icon-lethal"
-        },
-        {
             "name": "beanbag"
         },
         {
             "name": "slug"
         },
         {
-            "name": "icon-slug"
-        },
-        {
             "name": "incendiary"
-        },
-        {
-            "name": "icon-incendiary"
         },
         {
             "name": "practice"
@@ -138,12 +129,6 @@
         },
         {
             "name": "tranquilizer"
-        },
-        {
-            "name": "sarin"
-        },
-        {
-            "name": "icon-sarin"
         }
     ]
 }
