@@ -1097,3 +1097,12 @@
   components:
   - type: Sprite
     state: yellow-1
+
+- type: entity
+  parent: GasCanisterBrokenBase
+  id: PluoxiumCanisterBroken
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Sprite
+    state: darkblue-1
+# Assmos - /tg/ gases end
