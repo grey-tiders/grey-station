@@ -15,7 +15,7 @@
         - ReagentId: Nutriment
           Quantity: 5
   - type: Sprite
-    sprite: GreyStation/Objects/Consumable/Food/Baked/donkpocket.rsi
+    sprite: _GS/Objects/Consumable/Food/Baked/donkpocket.rsi
     state: gondola
 
 - type: entity
