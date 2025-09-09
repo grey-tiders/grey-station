@@ -1,6 +1,7 @@
 using System.Numerics;
 using Content.Shared.CCVar;
 using Content.Shared.Maps;
+using Content.Shared.Tiles;
 using Robust.Client.Graphics;
 using Robust.Shared.Configuration;
 using Robust.Shared.Enums;
@@ -125,7 +126,6 @@ public sealed class AmbientOcclusionOverlay : Overlay
                     worldHandle.SetTransform(worldToTextureMatrix);
                     while (tiles.MoveNext(out var tileRef))
                     {
-						// New API: check space using the Tile + TileDefManager
                         if (TurfHelpers.IsSpace(tileRef.Tile, _tileDefManager))
                             continue;
 
