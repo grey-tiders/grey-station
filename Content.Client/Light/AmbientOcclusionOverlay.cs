@@ -24,7 +24,6 @@ public sealed class AmbientOcclusionOverlay : Overlay
     [Dependency] private readonly IEntityManager _entManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IPrototypeManager _proto = default!;
-	[Dependency] private readonly ITileDefinitionManager _tileDefManager = default!;
 
     public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowEntities;
 
@@ -125,8 +124,7 @@ public sealed class AmbientOcclusionOverlay : Overlay
                     worldHandle.SetTransform(worldToTextureMatrix);
                     while (tiles.MoveNext(out var tileRef))
                     {
-						// New API: check space using the Tile + TileDefManager
-                        if (TurfHelpers.IsSpace(tileRef.Tile, _tileDefManager))
+                        if (turfSystem.IsSpace(tileRef))
                             continue;
 
                         var bounds = lookups.GetLocalBounds(tileRef, grid.TileSize);
