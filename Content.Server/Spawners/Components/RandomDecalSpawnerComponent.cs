@@ -54,7 +54,7 @@ public sealed partial class RandomDecalSpawnerComponent : Component
     /// Whether decals should snap to 90 degree orientations, does nothing if RandomRotation is false.
     /// </summary>
     [DataField]
-    public bool SnapRotation = false;
+    public bool SnapRotation = true;
 
     /// <summary>
     /// Whether decals should snap to the center omf a grid space or be placed randoly.
@@ -63,7 +63,7 @@ public sealed partial class RandomDecalSpawnerComponent : Component
     /// A null value will cause this to attempt to use the default value (DefaultSnap) for the decal.
     /// </remarks>
     [DataField]
-    public bool? SnapPosition = false;
+    public bool? SnapPosition = true;
 
     /// <summary>
     /// zIndex for the generated decals

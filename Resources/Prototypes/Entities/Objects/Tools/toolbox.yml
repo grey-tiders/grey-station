@@ -89,12 +89,6 @@
     tags:
     - Toolbox
     - DroneUsable # Goobstation
-  - type: GenericVisualizer
-    visuals:
-      enum.StorageVisuals.Open:
-        base:
-          True: { state: icon-open }
-          False: { state: icon }
   - type: Appearance
   - type: PhysicalComposition #Goobstation - Recycle update
     materialComposition:

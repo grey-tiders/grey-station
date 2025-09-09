@@ -57,7 +57,9 @@
   components:
   - type: Sprite
     sprite: Structures/Machines/mixer.rsi
-    snapCardinals: true
+# ES Start
+    noRot: true
+# ES End
     layers:
     - state: mixer_empty
     - state: mixer_screens

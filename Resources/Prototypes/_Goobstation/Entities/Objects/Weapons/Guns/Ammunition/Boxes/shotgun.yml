@@ -52,7 +52,7 @@
     layers:
     - state: base
       map: ["enum.GunVisualLayers.Base"]
-    - state: mag-alt-1
+    - state: mag-slug-1
       map: ["enum.GunVisualLayers.Mag"]
     - state: slug
 
@@ -68,7 +68,7 @@
     layers:
     - state: base
       map: ["enum.GunVisualLayers.Base"]
-    - state: mag-1
+    - state: mag-incend-1
       map: ["enum.GunVisualLayers.Mag"]
     - state: incendiary
 
@@ -88,7 +88,7 @@
     layers:
     - state: base
       map: ["enum.GunVisualLayers.Base"]
-    - state: mag-alt-1
+    - state: mag-uranium-1
       map: ["enum.GunVisualLayers.Mag"]
     - state: uranium
 
@@ -105,7 +105,7 @@
     layers:
     - state: base
       map: ["enum.GunVisualLayers.Base"]
-    - state: mag-1
+    - state: mag-beanbag-1
       map: ["enum.GunVisualLayers.Mag"]
     - state: beanbag
 
@@ -122,7 +122,7 @@
     layers:
     - state: base
       map: ["enum.GunVisualLayers.Base"]
-    - state: mag-1
+    - state: mag-practice-1
       map: ["enum.GunVisualLayers.Mag"]
     - state: practice
 
@@ -139,7 +139,7 @@
     layers:
     - state: base
       map: ["enum.GunVisualLayers.Base"]
-    - state: mag-1
+    - state: mag-incend-1
       map: ["enum.GunVisualLayers.Mag"]
     - state: incendiary
       color: "#cfff77"
@@ -156,7 +156,7 @@
     layers:
     - state: base
       map: ["enum.GunVisualLayers.Base"]
-    - state: mag-1
+    - state: mag-incend-1
       map: ["enum.GunVisualLayers.Mag"]
     - state: incendiary
       color: "#009eff"
@@ -173,7 +173,7 @@
     layers:
     - state: base
       map: ["enum.GunVisualLayers.Base"]
-    - state: mag-1
+    - state: mag-incend-1
       map: ["enum.GunVisualLayers.Mag"]
     - state: incendiary
       color: "#fff94d"
@@ -192,4 +192,4 @@
       map: ["enum.GunVisualLayers.Base"]
     - state: mag-1
       map: ["enum.GunVisualLayers.Mag"]
-    - state: sarin
+    - state: base

@@ -335,7 +335,9 @@
   name: steal-target-groups-chem-dispenser
   sprite:
     sprite: Structures/dispensers.rsi
-    state: industrial-working
+# ES Start
+    state: industrial
+# ES End
 
 - type: stealTargetGroup
   id: XenoArtifact

@@ -55,13 +55,15 @@
   - type: Sprite
     sprite: Structures/Storage/tanks.rsi
     layers:
-      - state: fueltank-2
+# ES Start
       - state: fueltank-2-1
         map: ["enum.SolutionContainerLayers.Fill"]
         visible: false
+      - state: fueltank-2
   - type: Appearance
   - type: SolutionContainerVisuals
-    maxFillLevels: 3
+    maxFillLevels: 4
+# ES End
     fillBaseName: fueltank-2-
   - type: ExaminableSolution
     solution: tank
@@ -101,12 +103,14 @@
   - type: Sprite
     sprite: Structures/Storage/tanks.rsi
     layers:
-      - state: highfueltank-2
+# ES Start
       - state: highfueltank-2-1
         map: ["enum.SolutionContainerLayers.Fill"]
         visible: false
+      - state: highfueltank-2
   - type: SolutionContainerVisuals
-    maxFillLevels: 7
+    maxFillLevels: 5
+# ES End
     fillBaseName: highfueltank-2-
   - type: SolutionContainerManager
     solutions:
@@ -136,13 +140,15 @@
   - type: Sprite
     sprite: Structures/Storage/tanks.rsi
     layers:
-      - state: watertank-2
+# ES Start
       - state: watertank-2-1
         map: ["enum.SolutionContainerLayers.Fill"]
         visible: false
+      - state: watertank-2
   - type: Appearance
   - type: SolutionContainerVisuals
     maxFillLevels: 5
+# ES End
     fillBaseName: watertank-2-
   - type: ExaminableSolution
     solution: tank
@@ -168,13 +174,15 @@
   - type: Sprite
     sprite: Structures/Storage/tanks.rsi
     layers:
-      - state: watercooler-2
+# ES Start
       - state: watercooler-2-1
         map: ["enum.SolutionContainerLayers.Fill"]
         visible: false
+      - state: watercooler-2
   - type: Appearance
   - type: SolutionContainerVisuals
-    maxFillLevels: 4
+    maxFillLevels: 5
+# ES End
     fillBaseName: watercooler-2-
   - type: SolutionContainerManager
     solutions:
@@ -220,13 +228,15 @@
   - type: Sprite
     sprite: Structures/Storage/tanks.rsi
     layers:
-      - state: highwatertank-2
+# ES Start
       - state: highwatertank-2-1
         map: ["enum.SolutionContainerLayers.Fill"]
         visible: false
+      - state: highwatertank-2
   - type: Appearance
   - type: SolutionContainerVisuals
-    maxFillLevels: 7
+    maxFillLevels: 6
+# ES End
     fillBaseName: highwatertank-2-
   - type: SolutionContainerManager
     solutions:
@@ -252,13 +262,15 @@
     - type: Sprite
       sprite: Structures/Storage/tanks.rsi
       layers:
-        - state: generictank-1
+# ES Start
         - state: watertank-2-1
           map: ["enum.SolutionContainerLayers.Fill"]
           visible: false
+        - state: generictank-1
     - type: Appearance
     - type: SolutionContainerVisuals
       maxFillLevels: 5
+# ES End
       fillBaseName: watertank-2-
     - type: ExaminableSolution
       solution: tank

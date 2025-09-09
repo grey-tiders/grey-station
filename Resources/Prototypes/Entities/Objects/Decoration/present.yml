@@ -420,6 +420,9 @@
       - id: FaceHuggerToys
         orGroup: GiftPool
       # WD EDIT END
+      - id: FoodBoxDonkpocketGondola # GreyStation
+        orGroup: GiftPool
+
     sound:
       path: /Audio/Effects/unwrap.ogg
 

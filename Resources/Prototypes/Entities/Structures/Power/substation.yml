@@ -190,6 +190,7 @@
     energy: 1
     color: "#ff6900"
     castShadows: false
+    offset: 0, -0.2
   - type: PowerMonitoringDevice
     sprite: Structures/Power/substation.rsi
     state: substation_static
@@ -260,7 +261,7 @@
     color: "#ff6900"
     netsync: false
     castShadows: false
-    offset: 0, -0.2
+    #offset: 0, -0.2 # GreyStation  - Change to fit current substation sprite
   - type: Clickable
   - type: ContainerFill
     containers:
