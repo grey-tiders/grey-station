@@ -1282,7 +1282,9 @@
     collection: FootstepCarpet
   barestepSounds:
     collection: BarestepCarpet
-  friction: 1.25
+  # ES START
+  friction: 4
+  # ES END
   itemDrop: FloorTileItemArcadeBlue
   heatCapacity: 10000
   tileRipResistance: 75
@@ -1298,7 +1300,9 @@
     collection: FootstepCarpet
   barestepSounds:
     collection: BarestepCarpet
-  friction: 1.25
+  # ES START
+  friction: 4
+  # ES END
   itemDrop: FloorTileItemArcadeBlue2
   heatCapacity: 10000
   tileRipResistance: 75
@@ -1314,7 +1318,9 @@
     collection: FootstepCarpet
   barestepSounds:
     collection: BarestepCarpet
-  friction: 1.25
+  # ES START
+  friction: 4
+  # ES END
   itemDrop: FloorTileItemArcadeRed
   heatCapacity: 10000
   tileRipResistance: 75
@@ -1330,7 +1336,9 @@
     collection: FootstepCarpet
   barestepSounds:
     collection: BarestepCarpet
-  friction: 1.25
+  # ES START
+  friction: 4
+  # ES END
   itemDrop: FloorTileItemEighties
   heatCapacity: 10000
   tileRipResistance: 75
@@ -1346,7 +1354,9 @@
     collection: FootstepCarpet
   barestepSounds:
     collection: BarestepCarpet
-  friction: 1.25
+  # ES START
+  friction: 4
+  # ES END
   itemDrop: FloorTileItemCarpetClown
   heatCapacity: 10000
   tileRipResistance: 75
@@ -1362,7 +1372,9 @@
     collection: FootstepCarpet
   barestepSounds:
     collection: BarestepCarpet
-  friction: 1.25
+  # ES START
+  friction: 4
+  # ES END
   itemDrop: FloorTileItemCarpetOffice
   heatCapacity: 10000
   tileRipResistance: 75
@@ -1382,7 +1394,9 @@
   deconstructTools: [ Prying ]
   footstepSounds:
     collection: FootstepFloor
-  friction: 1.25
+  # ES START
+  friction: 4
+  # ES END
   itemDrop: FloorTileItemBoxing
   heatCapacity: 10000
   tileRipResistance: 50
@@ -1402,7 +1416,9 @@
   deconstructTools: [ Prying ]
   footstepSounds:
     collection: FootstepFloor
-  friction: 1.25
+  # ES START
+  friction: 4
+  # ES END
   itemDrop: FloorTileItemGym
   heatCapacity: 10000
   tileRipResistance: 50
