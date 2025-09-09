@@ -1,6 +1,7 @@
 using System.Numerics;
 using Content.Shared.CCVar;
 using Content.Shared.Maps;
+using Content.Shared.Tiles;
 using Robust.Client.Graphics;
 using Robust.Shared.Configuration;
 using Robust.Shared.Enums;
@@ -24,6 +25,7 @@ public sealed class AmbientOcclusionOverlay : Overlay
     [Dependency] private readonly IEntityManager _entManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IPrototypeManager _proto = default!;
+	[Dependency] private readonly ITileDefinitionManager _tileDefManager = default!;
 
     public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowEntities;
 
@@ -124,7 +126,7 @@ public sealed class AmbientOcclusionOverlay : Overlay
                     worldHandle.SetTransform(worldToTextureMatrix);
                     while (tiles.MoveNext(out var tileRef))
                     {
-                        if (turfSystem.IsSpace(tileRef))
+                        if (TurfHelpers.IsSpace(tileRef.Tile, _tileDefManager))
                             continue;
 
                         var bounds = lookups.GetLocalBounds(tileRef, grid.TileSize);
