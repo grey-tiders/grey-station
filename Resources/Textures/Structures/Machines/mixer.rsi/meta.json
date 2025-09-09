@@ -5,7 +5,7 @@
     "y": 32
   },
   "license": "CC-BY-SA-3.0",
-  "copyright": "Taken from tgstation at commit https://github.com/tgstation/tgstation/commit/c838ba21dae97db345e0113f99596decd1d66039 and modified by Flareguy for Ephemeral Space, based off of computer sprites found in baystation12 at commit https://github.com/Baystation12/Baystation12/commit/1277065ea25011f2db6540c9c2e908f3fc746c68",
+  "copyright": "Taken from https://github.com/discordia-space/CEV-Eris/blob/2b969adc2dfd3e9621bf3597c5cbffeb3ac8c9f0/icons/obj/chemical.dmi and modified by Will-Oliver-Br",
   "states": [
     {
       "name": "mixer_empty",
@@ -35,14 +35,14 @@
       "name": "mixer_screens",
       "delays": [
         [
+          0.1,
           0.2,
+          0.1,
+          0.1,
           0.2,
+          0.1,
           0.2,
-          0.2,
-          0.2,
-          0.2,
-          0.2,
-          0.2
+          0.1
         ]
       ]
     },
