@@ -90,8 +90,8 @@
     - Energy
     reflectProb: 0.2
     spread: 90
-  - type: Paintable
-    group: CrateSteel
+#  - type: Paintable
+#    group: CrateSteel
   - type: RadiationBlockingContainer
     resistance: 2.5
   - type: PhysicalComposition #Goobstation - Recycle update
@@ -116,8 +116,8 @@
     node: done
     containers:
     - entity_storage
-  - type: Paintable
-    group: CrateFreezer
+#  - type: Paintable
+#    group: CrateFreezer
 
 - type: entity
   parent: CratePlastic
