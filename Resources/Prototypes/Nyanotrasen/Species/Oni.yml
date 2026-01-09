@@ -53,7 +53,7 @@
     HeadSide:
       points: 3
       required: true
-      defaultMarkings: [ None ]
+     # defaultMarkings: [ PointyEarsUpwards ] # Greystation change
     Snout:
       points: 2
       required: false
