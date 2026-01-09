@@ -49,11 +49,11 @@
     HeadTop:
       points: 1
       required: true
-      defaultMarkings: [ OniHornDoubleCurved ]
+      defaultMarkings: [ OniHornSingleCurved ]
     HeadSide:
       points: 3
       required: true
-      defaultMarkings: [ PointyEarsUpwards ]
+     # defaultMarkings: [ PointyEarsUpwards ] # Greystation change
     Snout:
       points: 2
       required: false
