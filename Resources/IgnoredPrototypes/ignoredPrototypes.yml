@@ -12,3 +12,6 @@
 - /Prototypes/SoundCollections/lobby.yml
 - /Prototypes/SoundCollections/NukeMusic.yml
 # ES END
+# GS START
+- /Prototypes/_ES/lobbyscreens.yml
+# GS END
