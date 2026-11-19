@@ -43,11 +43,13 @@ void fragment(){
 
     mask = 1.0 - clamp(mask, 0.0, 1.0);
 
-    // So grim.. so dark
-    highp float grain = zRandom(FRAGCOORD.xy * SCREEN_PIXEL_SIZE + vec2(fract(TIME))).x;
+	// Subtle grain
+	highp float grain = zRandom(FRAGCOORD.xy * SCREEN_PIXEL_SIZE + vec2(fract(TIME))).x;
 
-    // Lil bit of grayscale for good measure, too
-    highp float grayscale = zGrayscale(color.rgb) * (grain * grainMult + grainBase);
+	// Preserve original colors and apply grain only inside the cone
+	highp float grainAmount = grain * grainMult + 0.99;
 
-    COLOR = vec4(mix(color.rgb, vec3(grayscale), mask * grayscaleFactor), color.a);
+	highp vec3 grainedColor = color.rgb * grainAmount;
+
+	COLOR = vec4(mix(color.rgb, grainedColor, mask), color.a);
 }
