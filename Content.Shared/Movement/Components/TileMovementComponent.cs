@@ -1,58 +1,32 @@
 using System.Numerics;
-using Content.Shared.Movement.Systems;
 using Robust.Shared.GameStates;
 using Robust.Shared.Map;
 
-namespace Content.Shared.TileMovement;
+namespace Content.Shared.Movement.Components;
 
 /// <summary>
-/// When attached to an entity with an InputMoverComponent, all mob movement on that entity will
-/// be tile-based. Contains info used to facilitate that movement.
+/// Makes grounded movement advance one tile at a time through the shared mover controller.
 /// </summary>
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
 public sealed partial class TileMovementComponent : Component
 {
-    /// <summary>
-    /// Whether a tile movement slide is currently in progress.
-    /// </summary>
+    /// <summary>Whether the entity is currently moving toward a tile center.</summary>
     [AutoNetworkedField]
     public bool SlideActive;
 
-    /// <summary>
-    /// Local coordinates from which the current slide first began.
-    /// </summary>
+    /// <summary>Destination in the local coordinate frame of the entity's parent.</summary>
     [AutoNetworkedField]
-    public EntityCoordinates Origin;
+    public EntityCoordinates Destination;
 
-    /// <summary>
-    /// Local coordinates of the target of the current slide.
-    /// </summary>
-    [AutoNetworkedField]
-    public Vector2 Destination;
-
-    /// <summary>
-    /// This helps determine how long a slide should last. A slide will continue so long
-    /// as a movement key (WASD) is being held down, but if it was held down for less than
-    /// a certain time period then it will continue for a minimum period.
-    /// </summary>
-    [AutoNetworkedField]
-    public TimeSpan? MovementKeyInitialDownTime;
-
-    /// <summary>
-    /// Move buttons used to initiate the current slide.
-    /// </summary>
-    [AutoNetworkedField]
-    public MoveButtons CurrentSlideMoveButtons;
-
-    /// <summary>
-    /// Local coordinates of the entity on the last physics tick.
-    /// </summary>
+    /// <summary>Position at the previous mover tick, used to detect a blocked step.</summary>
     [AutoNetworkedField]
     public Vector2 LastTickPosition;
 
-    /// <summary>
-    /// Whether this entity was weightless last physics tick.
-    /// </summary>
+    /// <summary>Consecutive mover ticks with no progress toward the destination.</summary>
     [AutoNetworkedField]
-    public bool WasWeightlessLastTick;
+    public int NoProgressTicks;
+
+    /// <summary>Direction that was blocked by collision; same-direction input won't restart the step.</summary>
+    [AutoNetworkedField]
+    public Vector2 BlockedDirection;
 }
