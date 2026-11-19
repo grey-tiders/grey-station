@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using Content.Shared._DV.NodeCrawl;
 using Content.Shared.ActionBlocker;
+using Content.Shared._DV.Movement; // DeltaV
 using Content.Shared.CCVar;
 using Content.Shared.Friction;
 using Content.Shared.Gravity;
@@ -51,6 +52,7 @@ public abstract partial class SharedMoverController : VirtualController
     [Dependency] private SharedGravitySystem _gravity = default!;
     [Dependency] private SharedTransformSystem _transform = default!;
     [Dependency] private TagSystem _tags = default!;
+	[Dependency] private   readonly TileMovementSystem _tileMovement = default!; // DeltaV
     [Dependency] private SharedAppearanceSystem _appearance = default!;
     [Dependency] private NodeCrawlerMovementSystem _nodeCrawlerMovement = default!; // DeltaV - node crawling
 
@@ -146,7 +148,7 @@ public abstract partial class SharedMoverController : VirtualController
     /// <summary>
     ///     Movement while considering actionblockers, weightlessness, etc.
     /// </summary>
-    protected void HandleMobMovement(
+    public void HandleMobMovement( // DeltaV - made public
         Entity<InputMoverComponent> entity,
         float frameTime)
     {
@@ -216,7 +218,8 @@ public abstract partial class SharedMoverController : VirtualController
         // If we can't move then just use tile-friction / no movement handling.
         if (!mover.CanMove
             || !PhysicsQuery.TryComp(uid, out var physicsComponent)
-            || PullableQuery.TryGetComponent(uid, out var pullable) && pullable.BeingPulled)
+            // DeltaV - still process mobs pulled by TileMovement players
+            || PullableQuery.TryGetComponent(uid, out var pullable) && pullable.BeingPulled && !_tileMovement.HasTileMovement(pullable.Puller))
         {
             UsedMobMovement[uid] = false;
             return;
@@ -283,7 +286,18 @@ public abstract partial class SharedMoverController : VirtualController
             var walkSpeed = moveSpeedComponent?.WeightlessWalkSpeed ?? MovementSpeedModifierComponent.DefaultBaseWalkSpeed;
             var sprintSpeed = moveSpeedComponent?.WeightlessSprintSpeed ?? MovementSpeedModifierComponent.DefaultBaseSprintSpeed;
 
-            wishDir = AssertValidWish(mover, walkSpeed, sprintSpeed);
+			// Target direction / wish vector.
+			wishDir = AssertValidWish(mover, walkSpeed, sprintSpeed);
+
+			// Begin DeltaV Additions - handle tile movement
+			if (_tileMovement.TryTick((uid, mover, relayTarget), (physicsUid, physicsComponent, xform), tileDef, weightless, frameTime))
+				return;
+			// End DeltaV Additions
+
+			// Regular movement.
+			// Target velocity.
+			// This is relative to the map / grid we're on.
+			var moveSpeedComponent = ModifierQuery.CompOrNull(uid);
 
             var ev = new CanWeightlessMoveEvent(uid);
             RaiseLocalEvent(uid, ref ev, true);
@@ -553,7 +567,7 @@ public abstract partial class SharedMoverController : VirtualController
 
     protected abstract bool CanSound();
 
-    private bool TryGetSound(
+    public bool TryGetSound( // DeltaV - made public
         bool weightless,
         EntityUid uid,
         InputMoverComponent mover,
