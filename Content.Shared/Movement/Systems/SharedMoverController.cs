@@ -5,6 +5,7 @@ using Content.Shared.ActionBlocker;
 using Content.Shared.CCVar;
 using Content.Shared.Friction;
 using Content.Shared.Gravity;
+using Content.Shared.Interaction;
 using Content.Shared.Inventory;
 using Content.Shared.Maps;
 using Content.Shared.Mobs.Systems;
@@ -13,6 +14,7 @@ using Content.Shared.Movement.Events;
 using Content.Shared.Shuttles.Components;
 using Content.Shared.Tag;
 using Content.Shared.Traits.Assorted.Components;
+using Content.Shared.TileMovement;
 using Content.Shared.TileMovement;
 using Microsoft.Extensions.Logging;
 using Robust.Shared.Audio;
@@ -42,7 +44,10 @@ namespace Content.Shared.Movement.Systems;
 public abstract partial class SharedMoverController : VirtualController
 {
     [Dependency] private IConfigurationManager _configManager = default!;
+	[Dependency] private readonly AlertsSystem _alerts = default!;
+    [Dependency] private readonly IConfigurationManager _configManager = default!;
     [Dependency] protected IGameTiming Timing = default!;
+    [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private ITileDefinitionManager _tileDefinitionManager = default!;
     [Dependency] private ActionBlockerSystem _blocker = default!;
     [Dependency] private EntityLookupSystem _lookup = default!;
@@ -54,6 +59,7 @@ public abstract partial class SharedMoverController : VirtualController
     [Dependency] private SharedGravitySystem _gravity = default!;
     [Dependency] private SharedTransformSystem _transform = default!;
     [Dependency] private TagSystem _tags = default!;
+    [Dependency] private readonly IEntityManager _entities = default!; // Delta V-NoShoesSilentFootstepsComponent
     [Dependency] private SharedAppearanceSystem _appearance = default!;
     [Dependency] private NodeCrawlerMovementSystem _nodeCrawlerMovement = default!; // DeltaV - node crawling
 
@@ -67,6 +73,7 @@ public abstract partial class SharedMoverController : VirtualController
     protected EntityQuery<MovementRelayTargetComponent> RelayTargetQuery;
     protected EntityQuery<MovementSpeedModifierComponent> ModifierQuery;
     protected EntityQuery<NoRotateOnMoveComponent> NoRotateQuery;
+	protected EntityQuery<TileMovementComponent> TileMovementQuery;
     protected EntityQuery<PhysicsComponent> PhysicsQuery;
     protected EntityQuery<PilotComponent> PilotQuery;
     protected EntityQuery<PreventPilotComponent> PreventPilotQuery;
@@ -83,6 +90,8 @@ public abstract partial class SharedMoverController : VirtualController
     private float _minDamping;
     private float _airDamping;
     private float _offGridDamping;
+	
+	private TimeSpan CurrentTime => PhysicsSystem.EffectiveCurTime ?? Timing.CurTime;
 
     /// <summary>
     /// Cache the mob movement calculation to re-use elsewhere.
@@ -106,6 +115,7 @@ public abstract partial class SharedMoverController : VirtualController
         XformQuery = GetEntityQuery<TransformComponent>();
         NoRotateQuery = GetEntityQuery<NoRotateOnMoveComponent>();
         CanMoveInAirQuery = GetEntityQuery<CanMoveInAirComponent>();
+		TileMovementQuery = GetEntityQuery<TileMovement.TileMovementComponent>();
         FootstepModifierQuery = GetEntityQuery<FootstepModifierComponent>();
         MapGridQuery = GetEntityQuery<MapGridComponent>();
         MapQuery = GetEntityQuery<MapComponent>();
@@ -226,6 +236,35 @@ public abstract partial class SharedMoverController : VirtualController
 
             LerpRotation(uid, mover, frameTime);
         }
+
+            // Try doing tile movement.
+            if (TileMovementQuery.TryComp(physicsUid, out var tileMovement))
+            {
+                if (!weightless && physicsComponent.BodyStatus == BodyStatus.OnGround)
+                {
+                    var didTileMovement = HandleTileMovement(
+                        uid,
+                        physicsUid,
+                        tileMovement,
+                        physicsComponent,
+                        xform,
+                        mover,
+                        tileDef,
+                        relayTarget,
+                        frameTime);
+                    tileMovement.WasWeightlessLastTick = weightless;
+                    if (didTileMovement)
+                    {
+                        return;
+                    }
+                }
+                else
+                {
+                    tileMovement.WasWeightlessLastTick = weightless;
+                    tileMovement.SlideActive = false;
+                }
+            }
+
 
         // If we can't move then just use tile-friction / no movement handling.
         if (!mover.CanMove
