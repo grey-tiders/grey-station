@@ -125,9 +125,13 @@ public sealed partial class ESViewconeSetAlphaOverlay : Overlay
             _cone.CachedBaseAlphas.Add(((uid, sprite), baseAlpha));
 
             // multiply by the base alpha of the sprite (sprites which were already invisible for other reasons should stay invisible)
-            var alpha = (comp.Inverted ? 1f - targetAlpha : targetAlpha) * (comp.OverrideBaseAlpha ? 1f : baseAlpha);
+            var targetSpriteAlpha = (comp.Inverted ? 1f - targetAlpha : targetAlpha) * (comp.OverrideBaseAlpha ? 1f : baseAlpha);
+            var currentSpriteAlpha = _cone.CurrentOcclusionAlphas.GetValueOrDefault(uid, baseAlpha);
+            var blend = 1f - MathF.Exp(-_cone.FrameTime * 10f);
+            var alpha = currentSpriteAlpha + (targetSpriteAlpha - currentSpriteAlpha) * blend;
+            _cone.CurrentOcclusionAlphas[uid] = alpha;
             _sprite.SetColor((uid, sprite), sprite.Color.WithAlpha(alpha));
-            _sprite.SetVisible((uid, sprite), alpha > 0f);
+            _sprite.SetVisible((uid, sprite), alpha > 0.001f);
         }
     }
 }

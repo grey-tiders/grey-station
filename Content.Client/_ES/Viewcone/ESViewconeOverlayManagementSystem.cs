@@ -31,6 +31,10 @@ public sealed partial class ESViewconeOverlayManagementSystem : EntitySystem
     [Access(typeof(ESViewconeSetAlphaOverlay), typeof(ESViewconeResetAlphaOverlay))]
     public List<(Entity<SpriteComponent> ent, float baseAlpha)> CachedBaseAlphas = new(128);
 
+    // Per-entity alpha retained between overlay draws so turning does not hide sprites in a single frame.
+    public readonly Dictionary<EntityUid, float> CurrentOcclusionAlphas = new();
+    public float FrameTime { get; private set; }
+
     public override void Initialize()
     {
         base.Initialize();
@@ -49,6 +53,7 @@ public sealed partial class ESViewconeOverlayManagementSystem : EntitySystem
     public override void FrameUpdate(float frameTime)
     {
         base.FrameUpdate(frameTime);
+        FrameTime = frameTime;
 
         // the reason we use lerpingeye here in the query first is to
         // specifically check for eyes that we are actually rendering (lerpingeye already handles this sort of
