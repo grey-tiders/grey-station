@@ -21,7 +21,6 @@ public sealed partial class ESViewconeOverlayManagementSystem : EntitySystem
     private ESViewconeSetAlphaOverlay _setAlphaOverlay = default!;
     private ESViewconeResetAlphaOverlay _resetAlphaOverlay = default!;
 
-    private const float LerpHalfLife = 0.1f;
 
     // slightly balls state management, but
     // done so we don't have to requery within the same frame
@@ -78,7 +77,12 @@ public sealed partial class ESViewconeOverlayManagementSystem : EntitySystem
             // framerate-independent lerp
             // https://twitter.com/FreyaHolmer/status/1757836988495847568
             // convert to angle first so we lerp thru shortestdistance
-            viewcone.ViewAngle = Angle.Lerp(viewcone.ViewAngle, viewcone.DesiredViewAngle.Value, 1f - MathF.Pow(2f, -(frameTime / LerpHalfLife)));
+            var degrees = viewcone.DesiredViewAngle.Value.Degrees;
+
+			// Round to nearest 90 degrees
+			var snappedDegrees = Math.Round(degrees / 90.0) * 90.0;
+
+			viewcone.ViewAngle = Angle.FromDegrees(snappedDegrees);
         }
     }
 
