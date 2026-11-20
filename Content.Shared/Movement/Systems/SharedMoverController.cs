@@ -5,10 +5,10 @@ using Content.Shared.ActionBlocker;
 using Content.Shared.CCVar;
 using Content.Shared.Friction;
 using Content.Shared.Gravity;
+using Content.Shared.Movement.Components;
 using Content.Shared.Inventory;
 using Content.Shared.Maps;
 using Content.Shared.Mobs.Systems;
-using Content.Shared.Movement.Components;
 using Content.Shared.Movement.Events;
 using Content.Shared.Shuttles.Components;
 using Content.Shared.Tag;
@@ -64,6 +64,7 @@ public abstract partial class SharedMoverController : VirtualController
     protected EntityQuery<MovementRelayTargetComponent> RelayTargetQuery;
     protected EntityQuery<MovementSpeedModifierComponent> ModifierQuery;
     protected EntityQuery<NoRotateOnMoveComponent> NoRotateQuery;
+    protected EntityQuery<TileMovementComponent> TileMovementQuery;
     protected EntityQuery<PhysicsComponent> PhysicsQuery;
     protected EntityQuery<PilotComponent> PilotQuery;
     protected EntityQuery<PreventPilotComponent> PreventPilotQuery;
@@ -103,6 +104,7 @@ public abstract partial class SharedMoverController : VirtualController
         XformQuery = GetEntityQuery<TransformComponent>();
         NoRotateQuery = GetEntityQuery<NoRotateOnMoveComponent>();
         CanMoveInAirQuery = GetEntityQuery<CanMoveInAirComponent>();
+        TileMovementQuery = GetEntityQuery<TileMovementComponent>();
         FootstepModifierQuery = GetEntityQuery<FootstepModifierComponent>();
         MapGridQuery = GetEntityQuery<MapGridComponent>();
         MapQuery = GetEntityQuery<MapComponent>();
@@ -214,10 +216,17 @@ public abstract partial class SharedMoverController : VirtualController
         }
 
         // If we can't move then just use tile-friction / no movement handling.
-        if (!mover.CanMove
-            || !PhysicsQuery.TryComp(uid, out var physicsComponent)
-            || PullableQuery.TryGetComponent(uid, out var pullable) && pullable.BeingPulled)
+        if (!PhysicsQuery.TryComp(uid, out var physicsComponent))
         {
+            UsedMobMovement[uid] = false;
+            return;
+        }
+
+        if (!mover.CanMove || PullableQuery.TryGetComponent(uid, out var pullable) && pullable.BeingPulled)
+        {
+            if (TileMovementQuery.TryComp(uid, out var interruptedTileMovement))
+                CancelTileMovement(uid, physicsComponent, interruptedTileMovement);
+
             UsedMobMovement[uid] = false;
             return;
         }
@@ -251,6 +260,17 @@ public abstract partial class SharedMoverController : VirtualController
                 return;
             }
             inAirHelpless = true;
+        }
+
+        if ((weightless || physicsComponent.BodyStatus != BodyStatus.OnGround) &&
+            TileMovementQuery.TryComp(uid, out var airborneTileMovement) &&
+            (airborneTileMovement.SlideActive || airborneTileMovement.NoProgressTicks != 0 ||
+             airborneTileMovement.BlockedDirection != Vector2.Zero))
+        {
+            airborneTileMovement.SlideActive = false;
+            airborneTileMovement.NoProgressTicks = 0;
+            airborneTileMovement.BlockedDirection = Vector2.Zero;
+            Dirty(uid, airborneTileMovement);
         }
 
         UsedMobMovement[uid] = true;
@@ -353,6 +373,32 @@ public abstract partial class SharedMoverController : VirtualController
             accel *= tileDef?.MobAcceleration ?? 1f;
         }
 
+        // Tile movers use the same shared client/server simulation as ordinary movement.
+        // Weightless and airborne movement remains on the existing physics path.
+        if (!weightless && physicsComponent.BodyStatus == BodyStatus.OnGround &&
+            TileMovementQuery.TryComp(uid, out var tileMovement))
+        {
+            var speed = mover.Sprinting
+                ? moveSpeedComponent?.CurrentSprintSpeed ?? MovementSpeedModifierComponent.DefaultBaseSprintSpeed
+                : moveSpeedComponent?.CurrentWalkSpeed ?? MovementSpeedModifierComponent.DefaultBaseWalkSpeed;
+
+            if (wishDir != Vector2.Zero && MobMoverQuery.TryGetComponent(uid, out var tileMobMover) &&
+                TryGetSound(false, uid, mover, tileMobMover, xform, out var tileSound, tileDef: tileDef))
+            {
+                var soundModifier = mover.Sprinting ? InputMoverComponent.SprintingSoundModifier
+                    : InputMoverComponent.WalkingSoundModifier;
+                var audioParams = tileSound.Params
+                    .WithVolume(tileSound.Params.Volume + soundModifier)
+                    .WithVariation(tileSound.Params.Variation ?? tileMobMover.FootstepVariation);
+                _audio.PlayPredicted(tileSound, uid, relaySource ?? uid, audioParams);
+            }
+
+            SetWishDir((uid, mover), wishDir);
+            HandleTileMovement(uid, tileMovement, mover, xform, physicsComponent, wishDir, speed, frameTime, tileDef);
+            UsedMobMovement[uid] = true;
+            return;
+        }
+
         // This way friction never exceeds acceleration when you're trying to move.
         // If you want to slow down an entity with "friction" you shouldn't be using this system.
         if (wishDir != Vector2.Zero)
@@ -417,6 +463,131 @@ public abstract partial class SharedMoverController : VirtualController
                 }
             }
         }
+    }
+
+    private void HandleTileMovement(
+        EntityUid uid,
+        TileMovementComponent tileMovement,
+        InputMoverComponent mover,
+        TransformComponent xform,
+        PhysicsComponent physics,
+        Vector2 wishDir,
+        float speed,
+        float frameTime,
+        ContentTileDefinition? tileDef)
+    {
+        if (!float.IsFinite(speed) || speed <= 0f)
+        {
+            CancelTileMovement(uid, physics, tileMovement);
+            return;
+        }
+
+        var inputDirection = wishDir.LengthSquared() > 0.0001f ? Vector2.Normalize(wishDir) : Vector2.Zero;
+        if (tileMovement.BlockedDirection != Vector2.Zero)
+        {
+            if (inputDirection != Vector2.Zero && Vector2.Dot(tileMovement.BlockedDirection, inputDirection) > 0.95f)
+            {
+                PhysicsSystem.SetLinearVelocity(uid, Vector2.Zero, body: physics);
+                PhysicsSystem.SetAngularVelocity(uid, 0f, body: physics);
+                return;
+            }
+
+            tileMovement.BlockedDirection = Vector2.Zero;
+        }
+
+        if (!tileMovement.SlideActive && inputDirection != Vector2.Zero)
+        {
+            var parentRotation = Angle.Zero;
+            if (XformQuery.TryComp(xform.ParentUid, out var parent))
+                parentRotation = _transform.GetWorldRotation(parent);
+
+            var localDirection = (-parentRotation).RotateVec(inputDirection);
+            var target = xform.LocalPosition + localDirection;
+            tileMovement.Destination = new EntityCoordinates(xform.ParentUid, SnapCoordinatesToTile(target));
+            tileMovement.SlideActive = true;
+            tileMovement.NoProgressTicks = 0;
+            tileMovement.LastTickPosition = xform.LocalPosition;
+        }
+
+        // Grid traversal may change the transform parent during a step. Keep the same
+        // map-space destination by expressing it in the new parent's local coordinates.
+        if (tileMovement.SlideActive && tileMovement.Destination.EntityId != xform.ParentUid)
+        {
+            var mapDestination = _transform.ToMapCoordinates(tileMovement.Destination, logError: false);
+            tileMovement.Destination = _transform.ToCoordinates(xform.ParentUid, mapDestination);
+        }
+
+        if (!tileMovement.SlideActive)
+        {
+            var idleVelocity = physics.LinearVelocity;
+            var movementSpeed = ModifierQuery.CompOrNull(uid);
+            var friction = movementSpeed?.FrictionNoInput ?? MovementSpeedModifierComponent.DefaultFrictionNoInput;
+            friction *= tileDef?.Friction ?? 1f;
+            Friction(movementSpeed?.MinimumFrictionSpeed ?? MovementSpeedModifierComponent.DefaultMinimumFrictionSpeed,
+                frameTime, friction, ref idleVelocity);
+            PhysicsSystem.SetLinearVelocity(uid, idleVelocity, body: physics);
+            PhysicsSystem.SetAngularVelocity(uid, 0f, body: physics);
+            Dirty(uid, tileMovement);
+            return;
+        }
+
+        var localDelta = tileMovement.Destination.Position - xform.LocalPosition;
+        var remaining = localDelta.Length();
+        if (remaining <= Math.Max(0.01f, speed * frameTime))
+        {
+            _transform.SetLocalPosition(uid, tileMovement.Destination.Position, xform);
+            tileMovement.SlideActive = false;
+            PhysicsSystem.SetLinearVelocity(uid, Vector2.Zero, body: physics);
+            PhysicsSystem.SetAngularVelocity(uid, 0f, body: physics);
+            tileMovement.LastTickPosition = tileMovement.Destination.Position;
+            Dirty(uid, tileMovement);
+            return;
+        }
+
+        var parentWorldRotation = Angle.Zero;
+        if (XformQuery.TryComp(xform.ParentUid, out var parentTransform))
+            parentWorldRotation = _transform.GetWorldRotation(parentTransform);
+
+        var worldDirection = parentWorldRotation.RotateVec(localDelta / remaining);
+        PhysicsSystem.SetLinearVelocity(uid, worldDirection * speed, body: physics);
+        PhysicsSystem.SetAngularVelocity(uid, 0f, body: physics);
+
+        if (tileMovement.LastTickPosition.Equals(xform.LocalPosition))
+        {
+            tileMovement.NoProgressTicks++;
+            if (tileMovement.NoProgressTicks >= 2)
+            {
+                tileMovement.SlideActive = false;
+                tileMovement.BlockedDirection = worldDirection;
+                PhysicsSystem.SetLinearVelocity(uid, Vector2.Zero, body: physics);
+            }
+        }
+        else
+            tileMovement.NoProgressTicks = 0;
+
+        tileMovement.LastTickPosition = xform.LocalPosition;
+        if (!NoRotateQuery.HasComponent(uid) && localDelta != Vector2.Zero)
+            _transform.SetWorldRotation(xform, worldDirection.ToWorldAngle());
+
+        Dirty(uid, tileMovement);
+    }
+
+    private void CancelTileMovement(EntityUid uid, PhysicsComponent? physicsComponent, TileMovementComponent tileMovement)
+    {
+        var wasSliding = tileMovement.SlideActive;
+        var changed = wasSliding || tileMovement.NoProgressTicks != 0 || tileMovement.BlockedDirection != Vector2.Zero;
+        tileMovement.SlideActive = false;
+        tileMovement.NoProgressTicks = 0;
+        tileMovement.BlockedDirection = Vector2.Zero;
+        if (wasSliding && physicsComponent != null)
+            PhysicsSystem.SetLinearVelocity(uid, Vector2.Zero, body: physicsComponent);
+        if (changed)
+            Dirty(uid, tileMovement);
+    }
+
+    private static Vector2 SnapCoordinatesToTile(Vector2 position)
+    {
+        return new Vector2(MathF.Floor(position.X) + 0.5f, MathF.Floor(position.Y) + 0.5f);
     }
 
     public Vector2 GetWishDir(Entity<InputMoverComponent?> mover)
