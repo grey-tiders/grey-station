@@ -65,13 +65,15 @@ public sealed partial class HumanoidCharacterAppearance : ICharacterAppearance, 
             SkinColorationStrategyInput.Color => skinColoration.ClosestSkinColor(speciesPrototype.DefaultSkinTone),
             _ => skinColoration.ClosestSkinColor(speciesPrototype.DefaultSkinTone),
         };
-
+		
+		// GreyStation green eyes for humans
+		
         var defaultEyeColor = speciesPrototype.ID == "Human"
             ? Color.FromHex("#258000")
             : Color.Black;
 
         var appearance = new HumanoidCharacterAppearance(
-            defaultEyeColor,
+            defaultEyeColor,	// GreyStation green eyes for humans
             skinColor,
             new()
         );
