@@ -15,7 +15,7 @@ namespace Content.Shared.Humanoid;
 public sealed partial class HumanoidCharacterAppearance : ICharacterAppearance, IEquatable<HumanoidCharacterAppearance>
 {
     [DataField]
-    public Color EyeColor { get; set; } = Color.Black;
+    public Color EyeColor { get; set; } = Color.FromHex("#258000");
 
     [DataField]
     public Color SkinColor { get; set; } = Color.FromHsv(new Vector4(0.07f, 0.2f, 1f, 1f));
@@ -66,8 +66,12 @@ public sealed partial class HumanoidCharacterAppearance : ICharacterAppearance, 
             _ => skinColoration.ClosestSkinColor(speciesPrototype.DefaultSkinTone),
         };
 
+        var defaultEyeColor = speciesPrototype.ID == "Human"
+            ? Color.FromHex("#258000")
+            : Color.Black;
+
         var appearance = new HumanoidCharacterAppearance(
-            Color.Black,
+            defaultEyeColor,
             skinColor,
             new()
         );
