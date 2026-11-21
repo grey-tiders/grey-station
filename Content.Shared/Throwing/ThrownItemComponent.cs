@@ -39,6 +39,10 @@ namespace Content.Shared.Throwing
         [DataField, ViewVariables(VVAccess.ReadWrite), AutoNetworkedField]
         public bool Landed;
 
+        /// <summary>Landing was requested by a sleep callback and must be handled outside physics contact processing.</summary>
+        [ViewVariables]
+        public bool PendingLand;
+
         /// <summary>
         ///     Whether or not to play a sound when the entity lands.
         /// </summary>

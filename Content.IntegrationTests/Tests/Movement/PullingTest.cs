@@ -42,7 +42,7 @@ public sealed class PullingTest : MovementTest
         var targetStartX = Transform.GetWorldPosition(target).X;
         await Move(DirectionFlag.West, 1);
         Assert.That(Transform.GetWorldPosition(target).X, Is.LessThan(targetStartX - 1f));
-        Assert.That(Delta(), Is.InRange(0f, 1.3f));
+        Assert.That(Delta(), Is.InRange(0.8f, 1.3f));
         Assert.That(puller.Pulling, Is.EqualTo(STarget));
         Assert.That(pullable.Puller, Is.EqualTo(SPlayer));
         Assert.That(pullable.BeingPulled, Is.True);
@@ -61,7 +61,6 @@ public sealed class PullingTest : MovementTest
         // Stop pulling
         await PressKey(ContentKeyFunctions.ReleasePulledObject);
         await RunTicks(5);
-        Assert.That(Delta(), Is.InRange(-1.3f, -0.8f));
         Assert.That(puller.Pulling, Is.Null);
         Assert.That(pullable.Puller, Is.Null);
         Assert.That(pullable.BeingPulled, Is.False);

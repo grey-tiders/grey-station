@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Numerics;
 using Content.Shared._ES.Viewcone;
 using Content.Shared.Administration.Logs;
 using Content.Shared.Database;
@@ -6,6 +7,7 @@ using Content.Shared.Gravity;
 using Content.Shared.Physics;
 using Content.Shared.Movement.Pulling.Events;
 using Robust.Shared.Network;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Physics;
 using Robust.Shared.Physics.Components;
 using Robust.Shared.Physics.Events;
@@ -89,7 +91,9 @@ namespace Content.Shared.Throwing
 
         private void OnSleep(EntityUid uid, ThrownItemComponent thrownItem, ref PhysicsSleepEvent @event)
         {
-            StopThrow(uid, thrownItem);
+            // Contact callbacks can run while the physics solver is removing a
+            // contact. Defer landing and contact regeneration until the next update.
+            thrownItem.PendingLand = true;
         }
 
         private void HandlePullStarted(PullStartedMessage message)
@@ -139,7 +143,11 @@ namespace Content.Shared.Throwing
 
             // ES START
             _transform.SetLocalRotation(uid, Angle.Zero);
+            // Stop residual floor sliding before centering; otherwise the physics
+            // solver moves the item away from the tile center later in this tick.
+            _physics.SetLinearVelocity(uid, Vector2.Zero, body: physics);
             _physics.SetAngularVelocity(uid, 0f, body: physics);
+            CenterOnLandingTile(uid);
 
             // play effect if there was a thrower
             if (thrownItem.Thrower != null)
@@ -149,6 +157,21 @@ namespace Content.Shared.Throwing
             _broadphase.RegenerateContacts((uid, physics));
             var landEvent = new LandEvent(thrownItem.Thrower, playSound);
             RaiseLocalEvent(uid, ref landEvent);
+        }
+
+        private void CenterOnLandingTile(EntityUid uid)
+        {
+            var xform = Transform(uid);
+            if (xform.GridUid is not { } gridUid || xform.ParentUid != gridUid ||
+                !TryComp<MapGridComponent>(gridUid, out var grid))
+                return;
+
+            var tileSize = grid.TileSize;
+            var local = xform.LocalPosition;
+            var centered = new Vector2(
+                (MathF.Floor(local.X / tileSize) + 0.5f) * tileSize,
+                (MathF.Floor(local.Y / tileSize) + 0.5f) * tileSize);
+            _transform.SetLocalPosition(uid, centered, xform);
         }
 
         /// <summary>
@@ -176,6 +199,14 @@ namespace Content.Shared.Throwing
                 // If you remove this check verify slipping for other entities is networked properly.
                 if (_netMan.IsClient && !physics.Predict)
                     continue;
+
+                if (thrown.PendingLand)
+                {
+                    thrown.PendingLand = false;
+                    LandComponent(uid, thrown, physics, playSound: false);
+                    StopThrow(uid, thrown);
+                    continue;
+                }
 
                 if (thrown.LandTime <= _gameTiming.CurTime)
                 {
