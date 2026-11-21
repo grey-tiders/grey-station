@@ -7,6 +7,7 @@ using Content.Shared.Storage.Components;
 using Content.Shared.Tag;
 using Robust.Shared.Containers;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
 
@@ -161,6 +162,7 @@ public abstract partial class SharedHandsSystem
         var origin = new MapCoordinates(itemPos, itemXform.MapID);
         var target = TransformSystem.ToMapCoordinates(targetDropLocation.Value);
         TransformSystem.SetWorldPositionRotation(entity.Value, GetFinalDropCoordinates(ent, origin, target, entity.Value), itemRot);
+        CenterOnGroundTile(entity.Value);
         return true;
     }
 
@@ -242,10 +244,28 @@ public abstract partial class SharedHandsSystem
         if (doDropInteraction)
             _interactionSystem.DroppedInteraction(ent, entity.Value);
 
+        CenterOnGroundTile(entity.Value);
+
         if (log)
             _adminLogger.Add(LogType.Drop, LogImpact.Low, $"{ToPrettyString(ent):user} dropped {ToPrettyString(entity):entity}");
 
         if (handId == ent.Comp.ActiveHandId)
             RaiseLocalEvent(entity.Value, new HandDeselectedEvent(ent));
+    }
+
+    private void CenterOnGroundTile(EntityUid item)
+    {
+        if (!TryComp(item, out TransformComponent? xform) ||
+            xform.GridUid is not { } gridUid ||
+            xform.ParentUid != gridUid ||
+            !TryComp<MapGridComponent>(gridUid, out var grid))
+            return;
+
+        var tileSize = grid.TileSize;
+        var local = xform.LocalPosition;
+        var centered = new Vector2(
+            (MathF.Floor(local.X / tileSize) + 0.5f) * tileSize,
+            (MathF.Floor(local.Y / tileSize) + 0.5f) * tileSize);
+        TransformSystem.SetLocalPosition(item, centered, xform);
     }
 }
