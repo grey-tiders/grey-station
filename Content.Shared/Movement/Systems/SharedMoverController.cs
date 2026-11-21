@@ -3,6 +3,8 @@ using System.Numerics;
 using Content.Shared._DV.NodeCrawl;
 using Content.Shared.ActionBlocker;
 using Content.Shared.CCVar;
+using Content.Shared.Doors.Components;
+using Content.Shared.Doors.Systems;
 using Content.Shared.Friction;
 using Content.Shared.Gravity;
 using Content.Shared.Movement.Components;
@@ -10,6 +12,7 @@ using Content.Shared.Inventory;
 using Content.Shared.Maps;
 using Content.Shared.Mobs.Systems;
 using Content.Shared.Movement.Events;
+using Content.Shared.Physics;
 using Content.Shared.Shuttles.Components;
 using Content.Shared.Tag;
 using Robust.Shared.Audio;
@@ -48,6 +51,7 @@ public abstract partial class SharedMoverController : VirtualController
     [Dependency] private SharedAudioSystem _audio = default!;
     [Dependency] private SharedContainerSystem _container = default!;
     [Dependency] private SharedMapSystem _mapSystem = default!;
+    [Dependency] private TurfSystem _turf = default!;
     [Dependency] private SharedGravitySystem _gravity = default!;
     [Dependency] private SharedTransformSystem _transform = default!;
     [Dependency] private TagSystem _tags = default!;
@@ -65,6 +69,7 @@ public abstract partial class SharedMoverController : VirtualController
     protected EntityQuery<MovementSpeedModifierComponent> ModifierQuery;
     protected EntityQuery<NoRotateOnMoveComponent> NoRotateQuery;
     protected EntityQuery<TileMovementComponent> TileMovementQuery;
+    protected EntityQuery<DoorComponent> DoorQuery;
     protected EntityQuery<PhysicsComponent> PhysicsQuery;
     protected EntityQuery<PilotComponent> PilotQuery;
     protected EntityQuery<PreventPilotComponent> PreventPilotQuery;
@@ -105,6 +110,7 @@ public abstract partial class SharedMoverController : VirtualController
         NoRotateQuery = GetEntityQuery<NoRotateOnMoveComponent>();
         CanMoveInAirQuery = GetEntityQuery<CanMoveInAirComponent>();
         TileMovementQuery = GetEntityQuery<TileMovementComponent>();
+        DoorQuery = GetEntityQuery<DoorComponent>();
         FootstepModifierQuery = GetEntityQuery<FootstepModifierComponent>();
         MapGridQuery = GetEntityQuery<MapGridComponent>();
         MapQuery = GetEntityQuery<MapComponent>();
@@ -487,9 +493,17 @@ public abstract partial class SharedMoverController : VirtualController
         {
             if (inputDirection != Vector2.Zero && Vector2.Dot(tileMovement.BlockedDirection, inputDirection) > 0.95f)
             {
-                PhysicsSystem.SetLinearVelocity(uid, Vector2.Zero, body: physics);
-                PhysicsSystem.SetAngularVelocity(uid, 0f, body: physics);
-                return;
+                // Keep holding against a still-closed wall, but retry as soon as a door
+                // clears the destination tile instead of waiting for input to change.
+                var destinationTile = _turf.GetTileRef(tileMovement.Destination);
+                if (destinationTile == null ||
+                    (_turf.IsTileBlocked(destinationTile.Value, CollisionGroup.MobMask) &&
+                     !HasBumpOpenDoor(uid, destinationTile.Value)))
+                {
+                    PhysicsSystem.SetLinearVelocity(uid, Vector2.Zero, body: physics);
+                    PhysicsSystem.SetAngularVelocity(uid, 0f, body: physics);
+                    return;
+                }
             }
 
             tileMovement.BlockedDirection = Vector2.Zero;
@@ -504,6 +518,22 @@ public abstract partial class SharedMoverController : VirtualController
             var localDirection = (-parentRotation).RotateVec(inputDirection);
             var target = xform.LocalPosition + localDirection;
             tileMovement.Destination = new EntityCoordinates(xform.ParentUid, SnapCoordinatesToTile(target));
+
+            // Reject blocked destination tiles before applying movement velocity. This
+            // keeps the mob at its current position instead of letting physics push it
+            // partway into a wall and then snapping it back to the tile center.
+            var destinationTile = _turf.GetTileRef(tileMovement.Destination);
+            if (destinationTile == null ||
+                (_turf.IsTileBlocked(destinationTile.Value, CollisionGroup.MobMask) &&
+                 !HasBumpOpenDoor(uid, destinationTile.Value)))
+            {
+                tileMovement.BlockedDirection = inputDirection;
+                PhysicsSystem.SetLinearVelocity(uid, Vector2.Zero, body: physics);
+                PhysicsSystem.SetAngularVelocity(uid, 0f, body: physics);
+                Dirty(uid, tileMovement);
+                return;
+            }
+
             tileMovement.SlideActive = true;
             tileMovement.NoProgressTicks = 0;
             tileMovement.LastTickPosition = xform.LocalPosition;
@@ -552,13 +582,14 @@ public abstract partial class SharedMoverController : VirtualController
         PhysicsSystem.SetLinearVelocity(uid, worldDirection * speed, body: physics);
         PhysicsSystem.SetAngularVelocity(uid, 0f, body: physics);
 
-        if (tileMovement.LastTickPosition.Equals(xform.LocalPosition))
+        if (Vector2.DistanceSquared(tileMovement.LastTickPosition, xform.LocalPosition) < 0.0001f)
         {
             tileMovement.NoProgressTicks++;
             if (tileMovement.NoProgressTicks >= 2)
             {
                 tileMovement.SlideActive = false;
                 tileMovement.BlockedDirection = worldDirection;
+                tileMovement.NoProgressTicks = 0;
                 PhysicsSystem.SetLinearVelocity(uid, Vector2.Zero, body: physics);
             }
         }
@@ -583,6 +614,24 @@ public abstract partial class SharedMoverController : VirtualController
             PhysicsSystem.SetLinearVelocity(uid, Vector2.Zero, body: physicsComponent);
         if (changed)
             Dirty(uid, tileMovement);
+    }
+
+    private bool HasBumpOpenDoor(EntityUid uid, TileRef tile)
+    {
+        if (!_tags.HasTag(uid, SharedDoorSystem.DoorBumpTag) || !MapGridQuery.TryComp(tile.GridUid, out var grid))
+            return false;
+
+        var anchored = _mapSystem.GetAnchoredEntitiesEnumerator(tile.GridUid, grid, tile.GridIndices);
+        while (anchored.MoveNext(out var entity))
+        {
+            if (!DoorQuery.TryComp(entity, out var door) || !door.BumpOpen ||
+                door.State is not (DoorState.Closed or DoorState.Denying))
+                continue;
+
+            return true;
+        }
+
+        return false;
     }
 
     private static Vector2 SnapCoordinatesToTile(Vector2 position)

@@ -27,8 +27,8 @@ namespace Content.Shared.Movement.Components
 
         // movement
         // ES START
-        public const float DefaultBaseWalkSpeed = 2.5f;
-        public const float DefaultBaseSprintSpeed = 4.25f;
+        public const float DefaultBaseWalkSpeed = 3f;
+        public const float DefaultBaseSprintSpeed = 5f;
         // ES END
 
         // ES START
