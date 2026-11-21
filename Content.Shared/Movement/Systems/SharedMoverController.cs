@@ -493,12 +493,8 @@ public abstract partial class SharedMoverController : VirtualController
         {
             if (inputDirection != Vector2.Zero && Vector2.Dot(tileMovement.BlockedDirection, inputDirection) > 0.95f)
             {
-                // Keep holding against a still-closed wall, but retry as soon as a door
-                // clears the destination tile instead of waiting for input to change.
-                var destinationTile = _turf.GetTileRef(tileMovement.Destination);
-                if (destinationTile == null ||
-                    (_turf.IsTileBlocked(destinationTile.Value, CollisionGroup.MobMask) &&
-                     !HasBumpOpenDoor(uid, destinationTile.Value)))
+                // Retry held input as soon as the path clears.
+                if (IsTileStepBlocked(uid, xform.Coordinates, tileMovement.Destination))
                 {
                     PhysicsSystem.SetLinearVelocity(uid, Vector2.Zero, body: physics);
                     PhysicsSystem.SetAngularVelocity(uid, 0f, body: physics);
@@ -519,13 +515,7 @@ public abstract partial class SharedMoverController : VirtualController
             var target = xform.LocalPosition + localDirection;
             tileMovement.Destination = new EntityCoordinates(xform.ParentUid, SnapCoordinatesToTile(target));
 
-            // Reject blocked destination tiles before applying movement velocity. This
-            // keeps the mob at its current position instead of letting physics push it
-            // partway into a wall and then snapping it back to the tile center.
-            var destinationTile = _turf.GetTileRef(tileMovement.Destination);
-            if (destinationTile == null ||
-                (_turf.IsTileBlocked(destinationTile.Value, CollisionGroup.MobMask) &&
-                 !HasBumpOpenDoor(uid, destinationTile.Value)))
+            if (IsTileStepBlocked(uid, xform.Coordinates, tileMovement.Destination))
             {
                 tileMovement.BlockedDirection = inputDirection;
                 PhysicsSystem.SetLinearVelocity(uid, Vector2.Zero, body: physics);
@@ -614,6 +604,28 @@ public abstract partial class SharedMoverController : VirtualController
             PhysicsSystem.SetLinearVelocity(uid, Vector2.Zero, body: physicsComponent);
         if (changed)
             Dirty(uid, tileMovement);
+    }
+
+    private bool IsTileStepBlocked(EntityUid uid, EntityCoordinates origin, EntityCoordinates destination)
+    {
+        if (origin.EntityId != destination.EntityId)
+            origin = _transform.ToCoordinates(destination.EntityId, _transform.ToMapCoordinates(origin, logError: false));
+
+        var start = SnapCoordinatesToTile(origin.Position);
+        var end = destination.Position;
+        if (start.X != end.X && start.Y != end.Y)
+        {
+            // A diagonal step passes between both neighboring tiles. Doors there
+            // count as obstacles because the mover is passing their corners.
+            var sideX = _turf.GetTileRef(new EntityCoordinates(destination.EntityId, new Vector2(end.X, start.Y)));
+            var sideY = _turf.GetTileRef(new EntityCoordinates(destination.EntityId, new Vector2(start.X, end.Y)));
+            if ((sideX is { } x && _turf.IsTileBlocked(x, CollisionGroup.MobMask)) ||
+                (sideY is { } y && _turf.IsTileBlocked(y, CollisionGroup.MobMask)))
+                return true;
+        }
+
+        return _turf.GetTileRef(destination) is not { } tile ||
+               (_turf.IsTileBlocked(tile, CollisionGroup.MobMask) && !HasBumpOpenDoor(uid, tile));
     }
 
     private bool HasBumpOpenDoor(EntityUid uid, TileRef tile)
