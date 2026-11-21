@@ -38,7 +38,10 @@ public sealed class PullingTest : MovementTest
         Assert.That(sAlert.IsShowingAlert(SPlayer, puller.PullingAlert), Is.True);
 
         // Move to the left and check that the target moves with the player and is still being pulled.
+        var target = STarget!.Value;
+        var targetStartX = Transform.GetWorldPosition(target).X;
         await Move(DirectionFlag.West, 1);
+        Assert.That(Transform.GetWorldPosition(target).X, Is.LessThan(targetStartX - 1f));
         Assert.That(Delta(), Is.InRange(0.8f, 1.3f));
         Assert.That(puller.Pulling, Is.EqualTo(STarget));
         Assert.That(pullable.Puller, Is.EqualTo(SPlayer));
