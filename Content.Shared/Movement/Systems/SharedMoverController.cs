@@ -608,6 +608,17 @@ public abstract partial class SharedMoverController : VirtualController
 
     private bool IsTileStepBlocked(EntityUid uid, EntityCoordinates origin, EntityCoordinates destination)
     {
+        // Climbing temporarily removes table collision from the mover's solid fixtures.
+        var mask = CollisionGroup.None;
+        if (TryComp<FixturesComponent>(uid, out var fixtures))
+        {
+            foreach (var fixture in fixtures.Fixtures.Values)
+            {
+                if (fixture.Hard)
+                    mask |= (CollisionGroup) fixture.CollisionMask;
+            }
+        }
+
         if (origin.EntityId != destination.EntityId)
             origin = _transform.ToCoordinates(destination.EntityId, _transform.ToMapCoordinates(origin, logError: false));
 
@@ -619,15 +630,15 @@ public abstract partial class SharedMoverController : VirtualController
             // count as obstacles because the mover is passing their corners.
             var sideX = _turf.GetTileRef(new EntityCoordinates(destination.EntityId, new Vector2(end.X, start.Y)));
             var sideY = _turf.GetTileRef(new EntityCoordinates(destination.EntityId, new Vector2(start.X, end.Y)));
-            if ((sideX is { } x && _turf.IsTileBlocked(x, CollisionGroup.MobMask)) ||
-                (sideY is { } y && _turf.IsTileBlocked(y, CollisionGroup.MobMask)))
+            if ((sideX is { } x && _turf.IsTileBlocked(x, mask)) ||
+                (sideY is { } y && _turf.IsTileBlocked(y, mask)))
                 return true;
         }
 
         // An open grid edge has no destination tile. Physics carries the mover
         // into space and hands off to weightless movement when gravity drops.
         return _turf.GetTileRef(destination) is { } tile &&
-               _turf.IsTileBlocked(tile, CollisionGroup.MobMask) && !HasBumpOpenDoor(uid, tile);
+               _turf.IsTileBlocked(tile, mask) && !HasBumpOpenDoor(uid, tile);
     }
 
     private bool HasBumpOpenDoor(EntityUid uid, TileRef tile)
