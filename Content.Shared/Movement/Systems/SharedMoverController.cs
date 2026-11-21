@@ -624,8 +624,10 @@ public abstract partial class SharedMoverController : VirtualController
                 return true;
         }
 
-        return _turf.GetTileRef(destination) is not { } tile ||
-               (_turf.IsTileBlocked(tile, CollisionGroup.MobMask) && !HasBumpOpenDoor(uid, tile));
+        // An open grid edge has no destination tile. Physics carries the mover
+        // into space and hands off to weightless movement when gravity drops.
+        return _turf.GetTileRef(destination) is { } tile &&
+               _turf.IsTileBlocked(tile, CollisionGroup.MobMask) && !HasBumpOpenDoor(uid, tile);
     }
 
     private bool HasBumpOpenDoor(EntityUid uid, TileRef tile)
