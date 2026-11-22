@@ -59,8 +59,10 @@ namespace Content.Client.Chat.UI
         public bool Fading { get; private set; }
 
         public Vector2 ContentSize { get; private set; }
-        public string NameText { get; private set;  }
-        public string ContentText { get; private set; }
+        public string NameText { get; private set; } = string.Empty;
+        public string ContentText { get; private set; } = string.Empty;
+        private SpeechType _speechType;
+        private int _repeatCount;
 
         // man down
         public event Action<EntityUid, SpeechBubble>? OnDied;
@@ -76,12 +78,12 @@ namespace Content.Client.Chat.UI
             };
         }
 
-        public static SpeechBubble CreateSpeechBubble(SpeechType type, string name, string content, EntityUid senderEntity)
+        public static SpeechBubble CreateSpeechBubble(SpeechType type, string name, string content, EntityUid senderEntity, int repeatCount = 1)
         {
             switch (type)
             {
                 case SpeechType.Emote:
-                    return new TextSpeechBubble(name, content, senderEntity, type, prefix: "* ");
+                    return new TextSpeechBubble(name, content, senderEntity, type, prefix: "* ", repeatCount: repeatCount);
 
                 case SpeechType.Say:
                     return new FancyTextSpeechBubble(name, content, senderEntity, type);
@@ -100,7 +102,7 @@ namespace Content.Client.Chat.UI
             }
         }
 
-        public SpeechBubble(string name, string content, EntityUid senderEntity, SpeechType type, Color? fontColor = null, string prefix = "")
+        public SpeechBubble(string name, string content, EntityUid senderEntity, SpeechType type, Color? fontColor = null, string prefix = "", int repeatCount = 1)
         {
             IoCManager.InjectDependencies(this);
             _senderEntity = senderEntity;
@@ -110,28 +112,41 @@ namespace Content.Client.Chat.UI
             // Use text clipping so new messages don't overlap old ones being pushed up.
             RectClipContent = true;
 
-            RebuildBubbleContents(name, content, type, fontColor, prefix);
-            NameText = name;
-            ContentText = content;
+            RebuildBubbleContents(name, content, type, fontColor, prefix, repeatCount);
 
             _verticalOffsetAchieved = -ContentSize.Y;
             _deathTime = _timing.RealTime + TotalTime;
             _prefix = prefix;
         }
 
-        public void RebuildBubbleContents(string name, string content, SpeechType type, Color? fontColor = null, string? prefix = null)
+        public void RebuildBubbleContents(string name, string content, SpeechType type, Color? fontColor = null, string? prefix = null, int repeatCount = 1)
         {
             RemoveAllChildren();
-            var bubble = BuildBubble(name, content, type, fontColor, prefix ?? _prefix);
+            var bubble = BuildBubble(name, content, type, fontColor, prefix ?? _prefix, repeatCount);
             NameText = name;
             ContentText = content;
+            _speechType = type;
+            _repeatCount = repeatCount;
             AddChild(bubble);
             ForceRunStyleUpdate();
             bubble.Measure(Vector2Helpers.Infinity);
             ContentSize = bubble.DesiredSize;
         }
 
-        protected abstract Control BuildBubble(string name, string content, SpeechType type, Color? fontColor = null, string? prefix = "");
+        public bool TryRepeatEmote(string name, string content)
+        {
+            if (_speechType != SpeechType.Emote || NameText != name || ContentText != content ||
+                _deathTime is not { } deathTime || deathTime <= _timing.RealTime)
+            {
+                return false;
+            }
+
+            RebuildBubbleContents(name, content, SpeechType.Emote, repeatCount: _repeatCount + 1);
+            _deathTime = _timing.RealTime + TotalTime;
+            return true;
+        }
+
+        protected abstract Control BuildBubble(string name, string content, SpeechType type, Color? fontColor, string? prefix, int repeatCount);
 
         protected override void FrameUpdate(FrameEventArgs args)
         {
@@ -224,12 +239,12 @@ namespace Content.Client.Chat.UI
 
     public sealed class TextSpeechBubble : SpeechBubble
     {
-        public TextSpeechBubble(string name, string content, EntityUid senderEntity, SpeechType type, Color? fontColor = null, string prefix = "")
-            : base( name, content, senderEntity, type, fontColor, prefix)
+        public TextSpeechBubble(string name, string content, EntityUid senderEntity, SpeechType type, Color? fontColor = null, string prefix = "", int repeatCount = 1)
+            : base(name, content, senderEntity, type, fontColor, prefix, repeatCount)
         {
         }
 
-        protected override Control BuildBubble(string name, string content, SpeechType type, Color? fontColor = null, string? prefix = "")
+        protected override Control BuildBubble(string name, string content, SpeechType type, Color? fontColor, string? prefix, int repeatCount)
         {
             var speechStyleClass = GetStyle(type);
 
@@ -244,7 +259,14 @@ namespace Content.Client.Chat.UI
             var color = fontColor ?? Chat.GetChatColor(name);
             var outlineColor = Chat.GetChatOutlineColor(color);
             label.OutlineColorOverride = outlineColor;
-            label.UnsafeSetMarkup($"[color=#3daee9]{prefix}[/color]{content}", color);
+            var message = FormattedMessage.FromMarkupPermissive($"[color=#3daee9]{prefix}[/color]{content}");
+            if (repeatCount > 1)
+            {
+                message.PushColor(Color.White);
+                message.AddText(Loc.GetString("chat-emote-repeat-count", ("count", repeatCount)));
+                message.Pop();
+            }
+            label.SetMessage(message, defaultColor: color);
 
             var panel = new PanelContainer
             {
@@ -264,7 +286,7 @@ namespace Content.Client.Chat.UI
         {
         }
 
-        protected override Control BuildBubble(string name, string content, SpeechType type, Color? fontColor = null, string? prefix = "")
+        protected override Control BuildBubble(string name, string content, SpeechType type, Color? fontColor, string? prefix, int repeatCount)
         {
             var speechStyleClass = GetStyle(type);
 

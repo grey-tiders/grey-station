@@ -5,7 +5,6 @@ using Content.Shared.Chat.Prototypes;
 using Content.Shared.Humanoid;
 using Content.Shared.Speech;
 using Content.Shared.Speech.Components;
-using Robust.Shared.Audio.Systems;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
 
@@ -15,7 +14,6 @@ public sealed partial class VocalSystem : EntitySystem
 {
     [Dependency] private IRobustRandom _random = default!;
     [Dependency] private IPrototypeManager _proto = default!;
-    [Dependency] private SharedAudioSystem _audio = default!;
     [Dependency] private ESEmoteSystem _emote = default!;
     [Dependency] private ActionsSystem _actions = default!;
 
@@ -137,7 +135,7 @@ public sealed partial class VocalSystem : EntitySystem
     {
         if (_random.Prob(component.WilhelmProbability))
         {
-            _audio.PlayPvs(component.Wilhelm, uid, component.Wilhelm.Params);
+            _emote.PlayEmoteSound(uid, component.Wilhelm, component.Wilhelm.Params);
             return true;
         }
 

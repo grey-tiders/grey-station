@@ -3,7 +3,6 @@ using Content.Client.UserInterface.Systems.Chat.Widgets;
 using Content.Shared._ES.Chat;
 using Content.Shared.Chat;
 using Robust.Client.UserInterface.Controls;
-using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
 
 namespace Content.Client._ES.Chat;
@@ -13,8 +12,6 @@ namespace Content.Client._ES.Chat;
 /// </summary>
 public sealed partial class StagehandChatBox : ChatBox, IEntityLinkClickHandler
 {
-    [Dependency] private IPrototypeManager _prototype = default!;
-
     public PanelContainer StagehandChatWindowPanel;
     public OutputPanel StagehandContents;
 
@@ -57,11 +54,11 @@ public sealed partial class StagehandChatBox : ChatBox, IEntityLinkClickHandler
 
         msg.Read = true;
 
-        var channel = _prototype.Index(msg.Channel);
+        var channel = PrototypeManager.Index(msg.Channel);
         switch (channel.ChatBoxLocation)
         {
             case ESChatBoxLocation.Primary:
-                AddLine(msg.FormattedMessage, msg.Color);
+                AddChatMessage(msg, channel);
                 break;
             case ESChatBoxLocation.Stagehand:
                 AddStagehandLine(msg.FormattedMessage, msg.Color);
@@ -77,12 +74,6 @@ public sealed partial class StagehandChatBox : ChatBox, IEntityLinkClickHandler
     {
         StagehandContents.Clear();
         base.Repopulate();
-    }
-
-    protected override void OnChannelFilter(ProtoId<ESChatChannelFilterPrototype> channel, bool active)
-    {
-        StagehandContents.Clear();
-        base.OnChannelFilter(channel, active);
     }
 
     public void AddStagehandLine(string message, Color color)
