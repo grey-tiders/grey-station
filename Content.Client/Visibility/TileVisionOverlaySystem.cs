@@ -77,7 +77,7 @@ public sealed partial class TileVisionOverlaySystem : EntitySystem
         if (_overlay is not { } overlay ||
             viewport.Eye is not { DrawFov: true, DrawLight: true } eye ||
             _player.LocalEntity is not { } viewer ||
-            !TryComp<TransformComponent>(viewer, out var transform) ||
+            !TryComp(viewer, out TransformComponent? transform) ||
             transform.MapID != eye.Position.MapId ||
             transform.GridUid is not { } grid ||
             !HasComp<MapGridComponent>(grid))
@@ -138,7 +138,7 @@ public sealed partial class TileVisionOverlaySystem : EntitySystem
             var transparentDoor = TryComp<DoorComponent>(entity, out var door) && !door.Occludes;
             if ((!transparentDoor && !_tags.HasTag(entity, WindowTag)) ||
                 (TryComp<OccluderComponent>(entity, out var occluder) && occluder.Enabled) ||
-                !TryComp<TransformComponent>(entity, out var transform) || !transform.Anchored)
+                !TryComp(entity, out TransformComponent? transform) || !transform.Anchored)
                 continue;
 
             var pane = _transforms.GetMapCoordinates(transform);
