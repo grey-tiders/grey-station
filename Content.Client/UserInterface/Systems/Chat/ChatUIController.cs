@@ -295,8 +295,8 @@ public sealed partial class ChatUIController : UIController, IOnSystemChanged<ES
 
     private SpeechBubble CreateSpeechBubble(EntityUid entity, SpeechBubbleData speechData)
     {
-        var bubble =
-            SpeechBubble.CreateSpeechBubble(speechData.Type, speechData.Name, speechData.Content, entity);
+        var bubble = SpeechBubble.CreateSpeechBubble(
+            speechData.Type, speechData.Name, speechData.Content, entity, speechData.RepeatCount);
 
         bubble.OnDied += SpeechBubbleDied;
 
@@ -345,13 +345,40 @@ public sealed partial class ChatUIController : UIController, IOnSystemChanged<ES
         if (EntityManager.GetComponent<TransformComponent>(entity).MapID != _eye.CurrentEye.Position.MapId)
             return;
 
-        if (!_queuedSpeechBubbles.TryGetValue(entity, out var queueData))
+        _queuedSpeechBubbles.TryGetValue(entity, out var queueData);
+        if (speechType == SpeechType.Emote)
+        {
+            if (queueData?.MessageQueue.Last is { } tail)
+            {
+                var last = tail.Value;
+                if (last.Type == speechType && last.Name == message.Name && last.Content == message.Content)
+                {
+                    tail.Value = last with { RepeatCount = last.RepeatCount + 1 };
+                    return;
+                }
+            }
+            else if (_activeSpeechBubbles.TryGetValue(entity, out var bubbles))
+            {
+                var latest = bubbles[^1];
+                var oldHeight = latest.ContentSize.Y;
+                if (latest != _activeTypingSpeechBubble && latest.TryRepeatEmote(message.Name, message.Content))
+                {
+                    var heightChange = latest.ContentSize.Y - oldHeight;
+                    for (var i = 0; i < bubbles.Count - 1; i++)
+                        bubbles[i].VerticalOffset += heightChange;
+
+                    return;
+                }
+            }
+        }
+
+        if (queueData == null)
         {
             queueData = new SpeechBubbleQueueData();
             _queuedSpeechBubbles.Add(entity, queueData);
         }
 
-        queueData.MessageQueue.Enqueue(new SpeechBubbleData(message.Name, message.Content, speechType));
+        queueData.MessageQueue.AddLast(new SpeechBubbleData(message.Name, message.Content, speechType));
     }
 
     public void RemoveSpeechBubble(EntityUid entityUid, SpeechBubble bubble)
@@ -412,7 +439,8 @@ public sealed partial class ChatUIController : UIController, IOnSystemChanged<ES
                 continue;
             }
 
-            var msg = queueData.MessageQueue.Dequeue();
+            var msg = queueData.MessageQueue.First!.Value;
+            queueData.MessageQueue.RemoveFirst();
 
             queueData.TimeLeft += BubbleDelayBase + msg.Content.Length * BubbleDelayFactor;
 
@@ -704,7 +732,7 @@ public sealed partial class ChatUIController : UIController, IOnSystemChanged<ES
         }
     }
 
-    private readonly record struct SpeechBubbleData(string Name, string Content, SpeechType Type);
+    private readonly record struct SpeechBubbleData(string Name, string Content, SpeechType Type, int RepeatCount = 1);
 
     private sealed class SpeechBubbleQueueData
     {
@@ -713,7 +741,7 @@ public sealed partial class ChatUIController : UIController, IOnSystemChanged<ES
         /// </summary>
         public float TimeLeft { get; set; }
 
-        public Queue<SpeechBubbleData> MessageQueue { get; } = new();
+        public LinkedList<SpeechBubbleData> MessageQueue { get; } = new();
     }
 
     public void OnSystemLoaded(ESChatSystem system)

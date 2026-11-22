@@ -11,6 +11,7 @@ using Robust.Shared.Audio.Systems;
 using Robust.Shared.Network;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
+using Robust.Shared.Timing;
 
 namespace Content.Shared._ES.Chat;
 
@@ -24,7 +25,9 @@ public sealed partial class ESEmoteSystem : EntitySystem
     [Dependency] private SharedAudioSystem _audio = default!;
     [Dependency] private IRobustRandom _random = default!;
     [Dependency] private INetManager _net = default!;
+    [Dependency] private IGameTiming _timing = default!;
 
+    private static readonly TimeSpan EmoteSoundCooldown = TimeSpan.FromSeconds(1);
     private static readonly ProtoId<ESChatChannelPrototype> EmoteNoEffectChannel = "EmoteNoEffect";
 
     private FrozenDictionary<string, EmotePrototype> _wordEmoteDict = FrozenDictionary<string, EmotePrototype>.Empty;
@@ -175,7 +178,7 @@ public sealed partial class ESEmoteSystem : EntitySystem
     /// <summary>
     /// Tries to find and play the relevant emote sound in an emote sounds collection.
     /// </summary>
-    /// <returns>True if emote sound was played.</returns>
+    /// <returns>True if a sound was handled, including during cooldown.</returns>
     public bool TryPlayEmoteSound(EntityUid uid, EmoteSoundsPrototype? proto, EmotePrototype emote, AudioParams? audioParams = null)
     {
         return TryPlayEmoteSound(uid, proto, emote.ID, audioParams);
@@ -184,7 +187,7 @@ public sealed partial class ESEmoteSystem : EntitySystem
     /// <summary>
     /// Tries to find and play the relevant emote sound in an emote sounds collection.
     /// </summary>
-    /// <returns>True if emote sound was played.</returns>
+    /// <returns>True if a sound was handled, including during cooldown.</returns>
     public bool TryPlayEmoteSound(EntityUid uid, EmoteSoundsPrototype? proto, string emoteId, AudioParams? audioParams = null)
     {
         if (proto == null)
@@ -201,8 +204,19 @@ public sealed partial class ESEmoteSystem : EntitySystem
 
         // optional override params > general params for all sounds in set > individual sound params
         var param = audioParams ?? proto.GeneralParams ?? sound.Params;
-        _audio.PlayPvs(sound, uid, param);
+        PlayEmoteSound(uid, sound, param);
         return true;
+    }
+
+    public void PlayEmoteSound(EntityUid uid, SoundSpecifier sound, AudioParams audioParams)
+    {
+        var cooldown = EnsureComp<ESEmoteSoundCooldownComponent>(uid);
+        var now = _timing.CurTime;
+        if (now < cooldown.NextSoundTime)
+            return;
+
+        _audio.PlayPvs(sound, uid, audioParams);
+        cooldown.NextSoundTime = now + EmoteSoundCooldown;
     }
 
     /// <summary>
