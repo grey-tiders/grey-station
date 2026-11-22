@@ -12,8 +12,11 @@ public sealed class DiagonalMovementTest : MovementTest
         var start = SEntMan.GetCoordinates(PlayerCoords);
         var north = start.Offset(Vector2.UnitY);
         var destination = start.Offset(Vector2.One);
+        var pastDestination = destination.Offset(Vector2.UnitX);
         await SetTile(Plating, SEntMan.GetNetCoordinates(north), MapData.Grid);
         await SetTile(Plating, SEntMan.GetNetCoordinates(destination), MapData.Grid);
+        await SetTile(Plating, SEntMan.GetNetCoordinates(pastDestination), MapData.Grid);
+        await SpawnEntity("WallSolid", pastDestination);
         var obstacle = await SpawnEntity("WallSolid", start.Offset(new Vector2(obstacleX, obstacleY)));
 
         var initialPosition = Transform.GetWorldPosition(SPlayer);

@@ -1,4 +1,5 @@
 #nullable enable
+using System.Numerics;
 using Content.IntegrationTests.Tests.Interaction;
 using Content.IntegrationTests.Tests.Movement;
 using Robust.Shared.Maths;
@@ -9,6 +10,23 @@ namespace Content.IntegrationTests.Tests.Climbing;
 
 public sealed class ClimbingTest : MovementTest
 {
+    [Test]
+    public async Task WalkBetweenAdjacentTables()
+    {
+        await SpawnTarget("Table");
+        var secondTable = await SpawnEntity("Table", SEntMan.GetCoordinates(PlayerCoords).Offset(new Vector2(2, 0)));
+
+        var sys = SEntMan.System<ClimbSystem>();
+        await Server.WaitPost(() => sys.TryClimb(SPlayer, SPlayer, STarget!.Value, out _));
+        await AwaitDoAfters();
+
+        await Move(DirectionFlag.East, 1f);
+
+        Assert.That(Vector2.Distance(Transform.GetWorldPosition(SPlayer), Transform.GetWorldPosition(secondTable)),
+            Is.LessThan(0.01f));
+        Assert.That(Comp<ClimbingComponent>(Player).IsClimbing, Is.True);
+    }
+
     [Test]
     public async Task ClimbTableTest()
     {

@@ -45,6 +45,7 @@ public abstract partial class SharedMoverController : VirtualController
     [Dependency] protected IGameTiming Timing = default!;
     [Dependency] private ITileDefinitionManager _tileDefinitionManager = default!;
     [Dependency] private ActionBlockerSystem _blocker = default!;
+    [Dependency] private SharedDoorSystem _doors = default!;
     [Dependency] private EntityLookupSystem _lookup = default!;
     [Dependency] private InventorySystem _inventory = default!;
     [Dependency] private MobStateSystem _mobState = default!;
@@ -515,7 +516,7 @@ public abstract partial class SharedMoverController : VirtualController
             var target = xform.LocalPosition + localDirection;
             tileMovement.Destination = new EntityCoordinates(xform.ParentUid, SnapCoordinatesToTile(target));
 
-            if (IsTileStepBlocked(uid, xform.Coordinates, tileMovement.Destination))
+            if (IsTileStepBlocked(uid, xform.Coordinates, tileMovement.Destination, tryOpenDoor: true))
             {
                 tileMovement.BlockedDirection = inputDirection;
                 PhysicsSystem.SetLinearVelocity(uid, Vector2.Zero, body: physics);
@@ -606,8 +607,23 @@ public abstract partial class SharedMoverController : VirtualController
             Dirty(uid, tileMovement);
     }
 
-    private bool IsTileStepBlocked(EntityUid uid, EntityCoordinates origin, EntityCoordinates destination)
+    private bool IsTileStepBlocked(
+        EntityUid uid,
+        EntityCoordinates origin,
+        EntityCoordinates destination,
+        bool tryOpenDoor = false)
     {
+        // Climbing temporarily removes table collision from the mover's solid fixtures.
+        var mask = CollisionGroup.None;
+        if (TryComp<FixturesComponent>(uid, out var fixtures))
+        {
+            foreach (var fixture in fixtures.Fixtures.Values)
+            {
+                if (fixture.Hard)
+                    mask |= (CollisionGroup) fixture.CollisionMask;
+            }
+        }
+
         if (origin.EntityId != destination.EntityId)
             origin = _transform.ToCoordinates(destination.EntityId, _transform.ToMapCoordinates(origin, logError: false));
 
@@ -619,31 +635,38 @@ public abstract partial class SharedMoverController : VirtualController
             // count as obstacles because the mover is passing their corners.
             var sideX = _turf.GetTileRef(new EntityCoordinates(destination.EntityId, new Vector2(end.X, start.Y)));
             var sideY = _turf.GetTileRef(new EntityCoordinates(destination.EntityId, new Vector2(start.X, end.Y)));
-            if ((sideX is { } x && _turf.IsTileBlocked(x, CollisionGroup.MobMask)) ||
-                (sideY is { } y && _turf.IsTileBlocked(y, CollisionGroup.MobMask)))
+            if ((sideX is { } x && _turf.IsTileBlocked(x, mask)) ||
+                (sideY is { } y && _turf.IsTileBlocked(y, mask)))
                 return true;
         }
 
-        return _turf.GetTileRef(destination) is not { } tile ||
-               (_turf.IsTileBlocked(tile, CollisionGroup.MobMask) && !HasBumpOpenDoor(uid, tile));
-    }
-
-    private bool HasBumpOpenDoor(EntityUid uid, TileRef tile)
-    {
-        if (!_tags.HasTag(uid, SharedDoorSystem.DoorBumpTag) || !MapGridQuery.TryComp(tile.GridUid, out var grid))
+        // An open grid edge has no destination tile. Physics carries the mover
+        // into space and hands off to weightless movement when gravity drops.
+        if (_turf.GetTileRef(destination) is not { } tile || !_turf.IsTileBlocked(tile, mask))
             return false;
 
+        // Request opening from the current tile and wait for the door to stop blocking movement.
+        if (tryOpenDoor)
+            TryBumpOpenDoor(uid, tile);
+
+        return true;
+    }
+
+    private void TryBumpOpenDoor(EntityUid uid, TileRef tile)
+    {
+        if (!_tags.HasTag(uid, SharedDoorSystem.DoorBumpTag) || !MapGridQuery.TryComp(tile.GridUid, out var grid))
+            return;
+
         var anchored = _mapSystem.GetAnchoredEntitiesEnumerator(tile.GridUid, grid, tile.GridIndices);
-        while (anchored.MoveNext(out var entity))
+        while (anchored.MoveNext(out var anchoredEntity))
         {
-            if (!DoorQuery.TryComp(entity, out var door) || !door.BumpOpen ||
+            if (anchoredEntity is not { } entity || !DoorQuery.TryComp(entity, out var door) || !door.BumpOpen ||
                 door.State is not (DoorState.Closed or DoorState.Denying))
                 continue;
 
-            return true;
+            _doors.TryOpen(entity, door, uid, predicted: true, quiet: door.State == DoorState.Denying);
+            return;
         }
-
-        return false;
     }
 
     private static Vector2 SnapCoordinatesToTile(Vector2 position)
