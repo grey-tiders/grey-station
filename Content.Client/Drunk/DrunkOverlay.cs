@@ -42,6 +42,7 @@ public sealed partial class DrunkOverlay : Overlay
     public DrunkOverlay()
     {
         IoCManager.InjectDependencies(this);
+        ZIndex = -1; // Distort the scene before the tile FoV mask is drawn.
         _drunkShader = _prototypeManager.Index(Shader).InstanceUnique();
     }
 

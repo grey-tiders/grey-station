@@ -1,7 +1,7 @@
 ﻿uniform sampler2D SCREEN_TEXTURE;
 uniform highp float boozePower;
 const highp float TimeScale = 0.5;
-const highp float DistortionScale = 0.01;
+const highp float DistortionScale = 0.0025;
 
 void fragment() {
 

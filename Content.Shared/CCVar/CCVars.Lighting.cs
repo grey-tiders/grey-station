@@ -4,6 +4,12 @@ namespace Content.Shared.CCVar;
 
 public sealed partial class CCVars
 {
+    /// <summary>
+    /// Enables the tile-aligned visibility mask for the local player's vision.
+    /// </summary>
+    public static readonly CVarDef<bool> TileVisionOverlay =
+        CVarDef.Create("graphics.tile_vision_overlay", true, CVar.CLIENTONLY | CVar.ARCHIVE);
+
     public static readonly CVarDef<bool> AmbientOcclusion =
         CVarDef.Create("light.ambient_occlusion", true, CVar.CLIENTONLY | CVar.ARCHIVE);
 

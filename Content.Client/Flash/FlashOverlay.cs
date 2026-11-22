@@ -27,12 +27,14 @@ namespace Content.Client.Flash
         public override OverlaySpace Space => OverlaySpace.WorldSpace;
         private readonly ShaderInstance _shader;
         private bool _reducedMotion;
+        private bool _useFade;
         public float PercentComplete;
         public Texture? ScreenshotTexture;
 
         public FlashOverlay()
         {
             IoCManager.InjectDependencies(this);
+            ZIndex = 2; // Let the flash cover the tile FoV mask and damage vignette.
             _shader = _prototypeManager.Index(FlashedEffectShader).InstanceUnique();
             _flash = _entityManager.System<SharedFlashSystem>();
             _statusSys = _entityManager.System<StatusEffectsSystem>();
@@ -68,11 +70,31 @@ namespace Content.Client.Flash
             if (args.Viewport.Eye != eyeComp.Eye)
                 return false;
 
-            return PercentComplete < 1.0f;
+            if (PercentComplete >= 1.0f)
+                return false;
+
+            // Keep the fade when stepping off-grid, where the tile mask is temporarily inactive.
+            _useFade = _reducedMotion || _configManager.GetCVar(CCVars.TileVisionOverlay);
+
+            if (_useFade)
+                ScreenshotTexture = null;
+
+            RequestScreenTexture = !_useFade && ScreenshotTexture == null;
+            return true;
         }
 
         protected override void Draw(in OverlayDrawArgs args)
         {
+            var worldHandle = args.WorldHandle;
+            if (_useFade)
+            {
+                var progress = _reducedMotion ? PercentComplete : MathF.Min(PercentComplete * 2f, 1f);
+                var alpha = 1 - MathF.Pow(progress, 8f);
+                var color = _reducedMotion ? Color.Black : Color.White;
+                worldHandle.DrawRect(args.WorldBounds, color.WithAlpha(alpha));
+                return;
+            }
+
             if (RequestScreenTexture && ScreenTexture != null)
             {
                 ScreenshotTexture = ScreenTexture;
@@ -81,23 +103,10 @@ namespace Content.Client.Flash
             if (ScreenshotTexture == null)
                 return;
 
-            var worldHandle = args.WorldHandle;
-            if (_reducedMotion)
-            {
-                // TODO: This is a very simple placeholder.
-                // Replace it with a proper shader once we come up with something good.
-                // Turns out making an effect that is supposed to be a bright, sudden, and disorienting flash
-                // not do any of that while also being equivalent in terms of game balance is hard.
-                var alpha = 1 - MathF.Pow(PercentComplete, 8f); // similar falloff curve to the flash shader
-                worldHandle.DrawRect(args.WorldBounds, new Color(0f, 0f, 0f, alpha));
-            }
-            else
-            {
-                _shader.SetParameter("percentComplete", PercentComplete);
-                worldHandle.UseShader(_shader);
-                worldHandle.DrawTextureRectRegion(ScreenshotTexture, args.WorldBounds);
-                worldHandle.UseShader(null);
-            }
+            _shader.SetParameter("percentComplete", PercentComplete);
+            worldHandle.UseShader(_shader);
+            worldHandle.DrawTextureRectRegion(ScreenshotTexture, args.WorldBounds);
+            worldHandle.UseShader(null);
         }
 
         protected override void DisposeBehavior()

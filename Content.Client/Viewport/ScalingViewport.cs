@@ -1,4 +1,5 @@
 using System.Numerics;
+using Content.Client.Visibility;
 using Robust.Client.Graphics;
 using Robust.Client.Input;
 using Robust.Client.UserInterface;
@@ -162,7 +163,10 @@ namespace Content.Client.Viewport
 
             DebugTools.AssertNotNull(_viewport);
 
-            _viewport!.Render();
+            if (_entityManager.EntitySysManager.TryGetEntitySystem<TileVisionOverlaySystem>(out var tileVision))
+                tileVision.RenderViewport(_viewport!);
+            else
+                _viewport!.Render();
 
             if (_queuedScreenshots.Count != 0)
             {
