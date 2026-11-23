@@ -1,4 +1,5 @@
 using Content.Client.Graphics;
+using Content.Client.Visibility;
 using Robust.Client.Graphics;
 using Robust.Shared.Enums;
 
@@ -12,6 +13,7 @@ public sealed partial class BeforeLightTargetOverlay : Overlay
     public override OverlaySpace Space => OverlaySpace.BeforeLighting;
 
     [Dependency] private IClyde _clyde = default!;
+    [Dependency] private IOverlayManager _overlays = default!;
 
     private readonly OverlayResourceCache<CachedResources> _resources = new();
 
@@ -50,6 +52,9 @@ public sealed partial class BeforeLightTargetOverlay : Overlay
             () =>
             {
             }, _clyde.GetClearColor(args.MapUid));
+
+        if (_overlays.TryGetOverlay<TileVisionOverlay>(out var tileVision))
+            tileVision.MaskExteriorAmbientLight(args, res.EnlargedLightTarget, EnlargedBounds);
     }
 
     internal CachedResources GetCachedForViewport(IClydeViewport viewport)

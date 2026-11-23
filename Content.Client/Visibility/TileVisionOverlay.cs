@@ -27,7 +27,9 @@ public sealed partial class TileVisionOverlay : Overlay
     private readonly EntityQuery<TransformComponent> _transformQuery;
 
     private float _refreshTimer;
+    private uint _lastUpdateFrame;
     private const float RefreshInterval = 1f / 30f;
+    private const float ViewerTileBoundaryMargin = 0.08f;
     private EntityUid _cachedGrid = EntityUid.Invalid;
     private Vector2i _cachedViewerTile;
     private Box2i _cachedTileBounds;
@@ -45,30 +47,93 @@ public sealed partial class TileVisionOverlay : Overlay
 
     protected override void Draw(in OverlayDrawArgs args)
     {
-        if (args.Viewport != ActiveViewport ||
-            _player.LocalEntity is not { } viewer ||
-            !_transformQuery.TryGetComponent(viewer, out var viewerXform) ||
-            viewerXform.GridUid is not { } gridUid ||
-            !_entManager.TryGetComponent(gridUid, out MapGridComponent? grid))
+        if (!UpdateVisibility(args.Viewport, args.WorldBounds, out var grid))
+            return;
+
+        var lookups = _entManager.System<EntityLookupSystem>();
+        var gridMatrix = _entManager.System<SharedTransformSystem>().GetWorldMatrix(grid.Owner);
+        var tileToScreen = Matrix3x2.Multiply(gridMatrix, args.Viewport.GetWorldToLocalMatrix());
+        var pixelsPerTileUnit = MathF.Sqrt(tileToScreen.M11 * tileToScreen.M11 + tileToScreen.M12 * tileToScreen.M12);
+        var overlap = pixelsPerTileUnit > 0f ? 0.5f / pixelsPerTileUnit : 0f;
+
+        var handle = args.WorldHandle;
+        handle.SetTransform(gridMatrix);
+        foreach (var tile in _tiles)
+        {
+            if (_visible.Contains(tile))
+                continue;
+
+            var bounds = lookups.GetLocalBounds(tile, grid.Comp.TileSize).Enlarged(overlap);
+            handle.DrawRect(bounds, Color.Black);
+        }
+
+        handle.SetTransform(Matrix3x2.Identity);
+    }
+
+    internal void MaskExteriorAmbientLight(
+        in OverlayDrawArgs args,
+        IRenderTexture target,
+        Box2Rotated bounds)
+    {
+        var viewport = args.Viewport;
+        if (viewport.Eye is not { } eye || !UpdateVisibility(viewport, bounds, out var grid))
             return;
 
         var maps = _entManager.System<SharedMapSystem>();
         var lookups = _entManager.System<EntityLookupSystem>();
+        var gridMatrix = _entManager.System<SharedTransformSystem>().GetWorldMatrix(grid.Owner);
+        var scale = viewport.RenderScale * (viewport.LightRenderTarget.Size / (Vector2) viewport.Size);
+        var gridToTarget = Matrix3x2.Multiply(gridMatrix, target.GetWorldToLocalMatrix(eye, scale));
+
+        var handle = args.WorldHandle;
+        handle.RenderInRenderTarget(target, () =>
+        {
+            handle.SetTransform(gridToTarget);
+            foreach (var tile in _tiles)
+            {
+                // Remove only ambient light from unseen space before it can blur onto the hull.
+                if (!_visible.Contains(tile) && maps.GetTileRef(grid.Owner, grid.Comp, tile).Tile.IsEmpty)
+                    handle.DrawRect(lookups.GetLocalBounds(tile, grid.Comp.TileSize), Color.Black);
+            }
+        }, null);
+        handle.SetTransform(Matrix3x2.Identity);
+    }
+
+    private bool UpdateVisibility(IClydeViewport viewport, Box2Rotated worldBounds, out Entity<MapGridComponent> viewerGrid)
+    {
+        viewerGrid = default;
+        if (viewport != ActiveViewport ||
+            _player.LocalEntity is not { } viewer ||
+            !_transformQuery.TryGetComponent(viewer, out var viewerXform) ||
+            viewerXform.GridUid is not { } gridUid ||
+            !_entManager.TryGetComponent(gridUid, out MapGridComponent? grid))
+            return false;
+
+        viewerGrid = (gridUid, grid);
+
+        var maps = _entManager.System<SharedMapSystem>();
+        var lookups = _entManager.System<EntityLookupSystem>();
         var transforms = _entManager.System<SharedTransformSystem>();
-        var viewerTile = maps.LocalToTile(gridUid, grid, viewerXform.Coordinates);
-        var gridMatrix = transforms.GetWorldMatrix(gridUid);
-        var inverseGridMatrix = transforms.GetInvWorldMatrix(gridUid);
-        var localBounds = inverseGridMatrix.TransformBox(args.WorldBounds);
+        var viewerPosition = maps.LocalToGrid(gridUid, grid, viewerXform.Coordinates);
         var tileSize = grid.TileSize;
+        var viewerTile = GetViewerTile(viewerGrid, viewerPosition, lookups);
+
+        var inverseGridMatrix = transforms.GetInvWorldMatrix(gridUid);
+        var localBounds = inverseGridMatrix.TransformBox(worldBounds);
         var tileBounds = new Box2i(
             (int) MathF.Floor(localBounds.Left / tileSize),
             (int) MathF.Floor(localBounds.Bottom / tileSize),
             (int) MathF.Ceiling(localBounds.Right / tileSize),
             (int) MathF.Ceiling(localBounds.Top / tileSize));
 
-        _refreshTimer -= (float) _timing.FrameTime.TotalSeconds;
+        if (_lastUpdateFrame != _timing.CurFrame)
+        {
+            _lastUpdateFrame = _timing.CurFrame;
+            _refreshTimer -= (float) _timing.FrameTime.TotalSeconds;
+        }
+
         if (!_hasCache || _cachedGrid != gridUid || _cachedViewerTile != viewerTile ||
-            !_cachedTileBounds.Equals(tileBounds) || _refreshTimer <= 0f)
+            !_cachedTileBounds.Contains(tileBounds) || _refreshTimer <= 0f)
         {
             _refreshTimer = RefreshInterval;
             _cachedGrid = gridUid;
@@ -113,25 +178,25 @@ public sealed partial class TileVisionOverlay : Overlay
             }
         }
 
-        if (_tiles.Count == 0)
-            return;
+        return _tiles.Count != 0;
+    }
 
-        var tileToScreen = Matrix3x2.Multiply(gridMatrix, args.Viewport.GetWorldToLocalMatrix());
-        var pixelsPerTileUnit = MathF.Sqrt(tileToScreen.M11 * tileToScreen.M11 + tileToScreen.M12 * tileToScreen.M12);
-        var overlap = pixelsPerTileUnit > 0f ? 0.5f / pixelsPerTileUnit : 0f;
+    internal Vector2i GetViewerTile(Entity<MapGridComponent> grid, Vector2 position, EntityLookupSystem lookups)
+    {
+        var tileSize = grid.Comp.TileSize;
+        var tile = new Vector2i(
+            (int) MathF.Floor(position.X / tileSize),
+            (int) MathF.Floor(position.Y / tileSize));
 
-        var handle = args.WorldHandle;
-        handle.SetTransform(gridMatrix);
-        foreach (var tile in _tiles)
+        // Collision prediction can move the player back and forth across a tile edge.
+        if (_hasCache && _cachedGrid == grid.Owner && _cachedViewerTile != tile &&
+            lookups.GetLocalBounds(_cachedViewerTile, tileSize)
+                .Enlarged(ViewerTileBoundaryMargin * tileSize).Contains(position))
         {
-            if (_visible.Contains(tile))
-                continue;
-
-            var bounds = lookups.GetLocalBounds(tile, tileSize).Enlarged(overlap);
-            handle.DrawRect(bounds, Color.Black);
+            return _cachedViewerTile;
         }
 
-        handle.SetTransform(Matrix3x2.Identity);
+        return tile;
     }
 
     private bool HasLineOfSight(Vector2i source, Vector2i target)

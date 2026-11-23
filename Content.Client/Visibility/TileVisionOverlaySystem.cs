@@ -25,6 +25,7 @@ public sealed partial class TileVisionOverlaySystem : EntitySystem
     [Dependency] private LightTreeSystem _lights = default!;
     [Dependency] private OccluderSystem _occluders = default!;
     [Dependency] private SharedTransformSystem _transforms = default!;
+    [Dependency] private SharedMapSystem _maps = default!;
     [Dependency] private EntityLookupSystem _lookup = default!;
     [Dependency] private TagSystem _tags = default!;
 
@@ -80,7 +81,7 @@ public sealed partial class TileVisionOverlaySystem : EntitySystem
             !TryComp(viewer, out TransformComponent? transform) ||
             transform.MapID != eye.Position.MapId ||
             transform.GridUid is not { } grid ||
-            !HasComp<MapGridComponent>(grid))
+            !TryComp<MapGridComponent>(grid, out var gridComp))
         {
             viewport.Render();
             return;
@@ -91,7 +92,12 @@ public sealed partial class TileVisionOverlaySystem : EntitySystem
         overlay.ActiveViewport = viewport;
         try
         {
-            HideOccludedLights(viewport, _transforms.GetMapCoordinates(transform));
+            // Match the tile mask's origin so collision corrections do not toggle nearby lights.
+            var localPosition = _maps.LocalToGrid(grid, gridComp, transform.Coordinates);
+            var viewerTile = overlay.GetViewerTile((grid, gridComp), localPosition, _lookup);
+            var center = _lookup.GetLocalBounds(viewerTile, gridComp.TileSize).Center;
+            var worldCenter = Vector2.Transform(center, _transforms.GetWorldMatrix(grid));
+            HideOccludedLights(viewport, new MapCoordinates(worldCenter, eye.Position.MapId));
             viewport.Render();
         }
         finally
