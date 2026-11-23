@@ -42,7 +42,7 @@ public sealed partial class DamageOverlay : Overlay
     private float _oldOxygenLevel = 0f;
 
     /// <summary>
-    /// Handles the white overlay when crit.
+    /// Handles the dark vignette when in critical condition.
     /// </summary>
     public float CritLevel = 0f;
 
@@ -54,7 +54,7 @@ public sealed partial class DamageOverlay : Overlay
     {
         // TODO: Replace
         IoCManager.InjectDependencies(this);
-        ZIndex = -5; // Offbrand
+        ZIndex = 1; // Draw damage effects over the tile FoV mask at the default order.
         _oxygenShader = _prototypeManager.Index(CircleMaskShader).InstanceUnique();
         _critShader = _prototypeManager.Index(CircleMaskShader).InstanceUnique();
         _bruteShader = _prototypeManager.Index(CircleMaskShader).InstanceUnique();
@@ -72,7 +72,7 @@ public sealed partial class DamageOverlay : Overlay
          * Here's the rundown:
          * 1. There's lerping for each level so the transitions are smooth.
          * 2. There's 3 overlays, 1 for brute damage, 1 for oxygen damage (that also doubles as a crit overlay),
-         * and a white one during crit that closes in as you progress towards death. When you die it slowly disappears.
+         * and a dark one during crit that closes in as you progress towards death. When you die it slowly disappears.
          * The crit overlay also occasionally reduces its alpha as a "blink"
          */
 
@@ -238,7 +238,7 @@ public sealed partial class DamageOverlay : Overlay
 
             // If in crit then just fix it; also pulse it very occasionally so they can see more.
             _critShader.SetParameter("time", pulse);
-            _critShader.SetParameter("color", new Vector3(1f, 1f, 1f));
+            _critShader.SetParameter("color", Vector3.Zero);
             _critShader.SetParameter("darknessAlphaOuter", 1.0f);
             _critShader.SetParameter("innerCircleRadius", innerRadius);
             _critShader.SetParameter("innerCircleMaxRadius", innerRadius + 0.005f * distance);
